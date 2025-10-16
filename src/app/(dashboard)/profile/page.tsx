@@ -61,7 +61,7 @@ export default function Profile() {
       // 1. Fetch Profile Data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles_with_level')
-        .select('*, equipped_avatar_id, equipped_banner_id') // Assuming these columns exist on profiles_with_level view/table
+        .select('*')
         .eq('id', user.id)
         .single()
       
