@@ -17,7 +17,7 @@ interface Challenge {
   max_points: number
   max_team_size: number
   created_at: string
-  phase: 'submission' | 'voting' | 'completed'
+  status: 'Upcoming' | 'Voting' | 'Completed'
 }
 
 interface Submission {
@@ -123,13 +123,13 @@ export default function ChallengeDetail() {
     }
   }
 
-  const getPhaseColor = (phase: string) => {
-    switch (phase) {
-      case 'submission':
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Upcoming':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-      case 'voting':
+      case 'Voting':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-      case 'completed':
+      case 'Completed':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
@@ -222,8 +222,8 @@ export default function ChallengeDetail() {
               </p>
             </div>
             <div className="mt-4 md:mt-0">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPhaseColor(challenge.phase)}`}>
-                {challenge.phase.charAt(0).toUpperCase() + challenge.phase.slice(1)}
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(challenge.status)}`}>
+                {challenge.status.charAt(0).toUpperCase() + challenge.status.slice(1)}
               </span>
             </div>
           </div>
@@ -319,7 +319,7 @@ export default function ChallengeDetail() {
             Project Submitted
           </div>
         )}
-        {challenge.phase === 'voting' && (
+        {challenge.status === 'Voting' && (
           <Link
             href={`/challenges/${challenge.id}/vote`}
             className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import { FiUser, FiMail, FiCalendar, FiAward, FiSettings, FiGithub, FiLinkedin, FiGlobe, FiTrendingUp } from 'react-icons/fi'
+import { getRankFromLevel, getRankBadge } from '@/lib/utils'
 
 interface Profile {
   id: string
@@ -17,6 +18,7 @@ interface Profile {
   linkedin_url: string | null
   portfolio_url: string | null
   created_at: string
+  level: number
 }
 
 export default function Profile() {
@@ -38,14 +40,15 @@ export default function Profile() {
       
       try {
         const { data, error } = await supabase
-          .from('profiles')
+          .from('profiles_with_level')
           .select('*')
           .eq('id', user.id)
           .single()
         
         if (error) throw error
         
-        setProfile(data)
+        const rank = getRankFromLevel(data.level)
+        setProfile({ ...data, rank })
         setFormData({
           username: data.username || '',
           github_url: data.github_url || '',
@@ -105,29 +108,15 @@ export default function Profile() {
       
       if (error) throw error
       
-      setProfile(data)
+      if (profile) {
+        const rank = getRankFromLevel(profile.level)
+        setProfile({ ...profile, ...data, rank })
+      }
       setEditing(false)
     } catch (error) {
       console.error('Error updating profile:', error)
     } finally {
       setUpdating(false)
-    }
-  }
-
-  const getRankBadge = (rank: string) => {
-    switch (rank) {
-      case 'Rookie':
-        return '🥉'
-      case 'Apprentice':
-        return '🥈'
-      case 'Developer':
-        return '🥇'
-      case 'Master Dev':
-        return '🧠'
-      case 'Legend':
-        return '👑'
-      default:
-        return '👤'
     }
   }
 
@@ -293,7 +282,7 @@ export default function Profile() {
                 <button
                   type="submit"
                   disabled={updating}
-                  className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
                 >
                   {updating ? 'Saving...' : 'Save Changes'}
                 </button>

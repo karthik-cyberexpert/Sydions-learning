@@ -17,7 +17,7 @@ interface Challenge {
   max_points: number
   max_team_size: number
   created_at: string
-  phase: 'submission' | 'voting' | 'completed'
+  status: 'Upcoming' | 'Voting' | 'Completed'
 }
 
 export default function Challenges() {
@@ -86,13 +86,13 @@ export default function Challenges() {
     }
   }
 
-  const getPhaseColor = (phase: string) => {
-    switch (phase) {
-      case 'submission':
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Upcoming':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-      case 'voting':
+      case 'Voting':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-      case 'completed':
+      case 'Completed':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
@@ -198,8 +198,8 @@ export default function Challenges() {
                       </h3>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPhaseColor(challenge.phase)}`}>
-                    {challenge.phase}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(challenge.status)}`}>
+                    {challenge.status}
                   </span>
                 </div>
                 <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import { FiCalendar, FiUsers, FiAward, FiTrendingUp } from 'react-icons/fi'
+import { getRankFromLevel } from '@/lib/utils'
 
 interface Challenge {
   id: string
@@ -15,6 +16,7 @@ interface Challenge {
   deadline: string
   max_points: number
   created_at: string
+  status: 'Upcoming' | 'Voting' | 'Completed'
 }
 
 interface Stats {
@@ -39,7 +41,7 @@ export default function Dashboard() {
         const { data: challengesData, error: challengesError } = await supabase
           .from('challenges')
           .select('*')
-          .eq('phase', 'submission')
+          .eq('status', 'Upcoming')
           .order('deadline', { ascending: true })
           .limit(5)
         
@@ -47,8 +49,8 @@ export default function Dashboard() {
         
         // Fetch user stats
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('xp, rank')
+          .from('profiles_with_level')
+          .select('xp, level')
           .eq('id', user.id)
           .single()
         
@@ -62,11 +64,13 @@ export default function Dashboard() {
         
         if (submissionsError) throw submissionsError
         
+        const rank = getRankFromLevel(profileData?.level)
+        
         setChallenges(challengesData || [])
         setStats({
           active_challenges: challengesData?.length || 0,
           total_submissions: submissionsCount || 0,
-          rank: profileData?.rank || 'Rookie',
+          rank: rank,
           xp: profileData?.xp || 0
         })
       } catch (error) {

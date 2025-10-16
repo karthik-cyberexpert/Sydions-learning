@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import { FiAward, FiUsers, FiUser, FiTrendingUp } from 'react-icons/fi'
+import { getRankFromLevel, getRankBadge } from '@/lib/utils'
 
 interface LeaderboardUser {
   id: string
@@ -31,14 +32,14 @@ export default function Leaderboard() {
       try {
         // Fetch top users by XP
         const { data: usersData, error: usersError } = await supabase
-          .from('profiles')
-          .select('id, username, xp, rank')
+          .from('profiles_with_level')
+          .select('id, username, xp, level')
           .order('xp', { ascending: false })
           .limit(50)
         
         if (usersError) throw usersError
         
-        // Add submission counts to users
+        // Add submission counts and rank to users
         const usersWithSubmissions = await Promise.all(
           (usersData || []).map(async (user) => {
             const { count, error } = await supabase
@@ -48,6 +49,7 @@ export default function Leaderboard() {
             
             return {
               ...user,
+              rank: getRankFromLevel(user.level),
               submissions_count: count || 0
             }
           })
@@ -57,29 +59,21 @@ export default function Leaderboard() {
         
         // Fetch top guilds by points
         const { data: guildsData, error: guildsError } = await supabase
-          .from('guilds')
-          .select('id, name, points')
-          .order('points', { ascending: false })
+          .from('guild_leaderboard')
+          .select('id, name, total_xp, member_count')
+          .order('total_xp', { ascending: false })
           .limit(20)
         
         if (guildsError) throw guildsError
         
-        // Add member counts to guilds
-        const guildsWithMembers = await Promise.all(
-          (guildsData || []).map(async (guild) => {
-            const { count, error } = await supabase
-              .from('guild_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('guild_id', guild.id)
-            
-            return {
-              ...guild,
-              members_count: count || 0
-            }
-          })
-        )
+        const transformedGuilds = (guildsData || []).map(g => ({
+          id: g.id,
+          name: g.name,
+          points: g.total_xp || 0,
+          members_count: g.member_count || 0
+        }))
         
-        setGuilds(guildsWithMembers)
+        setGuilds(transformedGuilds)
       } catch (error) {
         console.error('Error fetching leaderboard data:', error)
       } finally {
@@ -89,23 +83,6 @@ export default function Leaderboard() {
     
     fetchLeaderboardData()
   }, [])
-
-  const getRankBadge = (rank: string) => {
-    switch (rank) {
-      case 'Rookie':
-        return '🥉'
-      case 'Apprentice':
-        return '🥈'
-      case 'Developer':
-        return '🥇'
-      case 'Master Dev':
-        return '🧠'
-      case 'Legend':
-        return '👑'
-      default:
-        return '👤'
-    }
-  }
 
   if (loading) {
     return (

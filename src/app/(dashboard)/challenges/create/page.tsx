@@ -36,16 +36,16 @@ export default function CreateChallenge() {
     setError(null)
     
     try {
-      // Check if user is admin (in a real app, this would be more robust)
+      // Check if user is admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('is_admin')
         .eq('id', user?.id)
         .single()
       
       if (profileError) throw profileError
       
-      if (profile?.role !== 'admin') {
+      if (!profile?.is_admin) {
         throw new Error('Only admins can create challenges')
       }
       
@@ -60,8 +60,8 @@ export default function CreateChallenge() {
             difficulty: formData.difficulty,
             deadline: formData.deadline,
             max_points: formData.max_points,
-            max_team_size: formData.max_team_size,
-            phase: 'submission'
+            max_team_size: formData.type === 'tag-team' ? formData.max_team_size : null,
+            status: 'Upcoming'
           }
         ])
         .select()

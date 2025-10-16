@@ -1,16 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Define types for our Supabase client
-export type UserRole = 'admin' | 'user'
-
 export interface UserProfile {
   id: string
   username: string
   email: string
-  role: UserRole
+  is_admin: boolean
   xp: number
   coins: number
-  rank: string
   created_at: string
   updated_at: string
 }
@@ -18,7 +15,7 @@ export interface UserProfile {
 // Define types for our challenge system
 export type ChallengeType = 'solo' | 'tag-team' | 'guild'
 export type ChallengeDifficulty = 'beginner' | 'intermediate' | 'advanced'
-export type ChallengePhase = 'submission' | 'voting' | 'completed'
+export type ChallengeStatus = 'Upcoming' | 'Voting' | 'Completed'
 
 export interface Challenge {
   id: string
@@ -31,7 +28,7 @@ export interface Challenge {
   max_team_size: number
   created_at: string
   updated_at: string
-  phase: ChallengePhase
+  status: ChallengeStatus
 }
 
 export interface ProjectSubmission {
