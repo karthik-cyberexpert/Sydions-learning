@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Admin/dyad-apps/Folder/dyad-dev-challenges/src/app/page.tsx"],"sourcesContent":["'use client'\n\nimport { useAuth } from '@/contexts/AuthContext'\nimport { useRouter } from 'next/navigation'\nimport { useEffect } from 'react'\n\nexport default function Home() {\n  const { user } = useAuth()\n  const router = useRouter()\n\n  useEffect(() => {\n    if (user) {\n      router.push('/dashboard')\n    } else {\n      router.push('/explore')\n    }\n  }, [user, router])\n\n  return (\n    <div className=\"flex justify-center items-center h-screen\">\n      <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600\"></div>\n    </div>\n  )\n}"],"names":[],"mappings":";;;;;AAEA;AACA;AACA;;;AAJA;;;;AAMe,SAAS;;IACtB,MAAM,EAAE,IAAI,EAAE,GAAG,IAAA,6IAAO;IACxB,MAAM,SAAS,IAAA,kJAAS;IAExB,IAAA,0KAAS;0BAAC;YACR,IAAI,MAAM;gBACR,OAAO,IAAI,CAAC;YACd,OAAO;gBACL,OAAO,IAAI,CAAC;YACd;QACF;yBAAG;QAAC;QAAM;KAAO;IAEjB,qBACE,6LAAC;QAAI,WAAU;kBACb,cAAA,6LAAC;YAAI,WAAU;;;;;;;;;;;AAGrB;GAjBwB;;QACL,6IAAO;QACT,kJAAS;;;KAFF","debugId":null}},
+    {"offset": {"line": 64, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Admin/dyad-apps/Folder/dyad-dev-challenges/node_modules/next/navigation.js"],"sourcesContent":["module.exports = require('./dist/client/components/navigation')\n"],"names":[],"mappings":"AAAA,OAAO,OAAO","ignoreList":[0],"debugId":null}}]
+}
