@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { FiSend } from 'react-icons/fi'
@@ -27,59 +27,55 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      setLoading(true);
-      try {
-        const { data: messagesData, error: messagesError } = await supabase
-          .from('messages')
-          .select(`*`)
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true });
+  const fetchMessages = useCallback(async () => {
+    try {
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select(`*`)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
 
-        if (messagesError) throw messagesError;
+      if (messagesError) throw messagesError;
 
-        if (!messagesData || messagesData.length === 0) {
-          setMessages([]);
-          return;
-        }
-
-        const userIds = [...new Set(messagesData.map(m => m.user_id))];
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .in('id', userIds);
-
-        if (profilesError) throw profilesError;
-
-        const profilesMap = new Map(profilesData.map(p => [p.id, p]));
-        const fullMessages = messagesData.map(message => ({
-          ...message,
-          profiles: profilesMap.get(message.user_id) || { username: 'Unknown', avatar_url: null }
-        }));
-
-        setMessages(fullMessages as any);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      } finally {
-        setLoading(false);
+      if (!messagesData || messagesData.length === 0) {
+        setMessages([]);
+        return;
       }
-    }
 
-    if (conversationId) {
-      fetchMessages()
+      const userIds = [...new Set(messagesData.map(m => m.user_id))];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+      const fullMessages = messagesData.map(message => ({
+        ...message,
+        profiles: profilesMap.get(message.user_id) || { username: 'Unknown', avatar_url: null }
+      }));
+
+      setMessages(fullMessages as any);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [conversationId])
+  }, [conversationId]);
 
   useEffect(() => {
+    if (conversationId) {
+      setLoading(true);
+      fetchMessages();
+    }
+  }, [conversationId, fetchMessages]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+
     const channel = supabase
-      .channel(`messages-${conversationId}`, {
-        config: {
-          broadcast: {
-            self: true,
-          },
-        },
-      })
+      .channel(`messages-${conversationId}`)
       .on(
         'postgres_changes',
         {
@@ -88,25 +84,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           table: 'messages',
           filter: `conversation_id=eq.${conversationId}`,
         },
-        async (payload) => {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('username, avatar_url')
-            .eq('id', payload.new.user_id)
-            .single()
-          
-          if (!error && data) {
-            const fullMessage = { ...payload.new, profiles: data } as Message
-            setMessages((prevMessages) => [...prevMessages, fullMessage])
-          }
+        (payload) => {
+          fetchMessages();
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [conversationId])
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, fetchMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
