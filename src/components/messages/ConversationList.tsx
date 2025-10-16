@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { FiPlus, FiSearch } from 'react-icons/fi'
@@ -36,39 +36,42 @@ export default function ConversationList({ selectedConversationId, onSelectConve
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchConversations = async () => {
-      if (!user) return
-      setLoading(true)
-      setError(null)
-      const { data, error: rpcError } = await supabase.rpc('get_user_conversations')
-      
-      if (rpcError) {
-        console.error('Error fetching conversations:', rpcError)
-        setError('Could not load conversations. Please try again later.')
-      } else {
-        setConversations(data || [])
-      }
-      setLoading(false)
+  const fetchConversations = useCallback(async () => {
+    if (!user) return
+    setError(null)
+    const { data, error: rpcError } = await supabase.rpc('get_user_conversations')
+    
+    if (rpcError) {
+      console.error('Error fetching conversations:', rpcError)
+      setError('Could not load conversations. Please try again later.')
+    } else {
+      setConversations(data || [])
     }
-
-    fetchConversations()
+    setLoading(false)
   }, [user])
 
   useEffect(() => {
+    fetchConversations()
+  }, [fetchConversations])
+
+  useEffect(() => {
+    if (!user) return;
+
     const channel = supabase
-      .channel('public:conversations')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, (payload) => {
-        supabase.rpc('get_user_conversations').then(({ data }) => {
-          if (data) setConversations(data)
-        })
-      })
-      .subscribe()
+      .channel('public:messages:for-conversations-list')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          fetchConversations();
+        }
+      )
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchConversations]);
 
   useEffect(() => {
     if (searchTerm.trim().length > 1) {
