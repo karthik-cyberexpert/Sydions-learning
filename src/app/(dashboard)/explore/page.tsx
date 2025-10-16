@@ -36,25 +36,44 @@ export default function Explore() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        // Fetch projects with related data
+        // 1. Fetch projects with related data, but not profiles yet
         const { data, error } = await supabase
           .from('submissions')
           .select(`
             id,
+            user_id,
             description,
             live_url,
             created_at,
             challenges ( title, type ),
-            profiles!user_id ( username ),
             guilds ( name )
           `)
           .order('created_at', { ascending: false })
           .limit(20)
         
         if (error) throw error
+        if (!data) {
+          setProjects([])
+          setLoading(false)
+          return
+        }
+
+        // 2. Get unique user IDs from submissions
+        const userIds = [...new Set(data.map(p => p.user_id))]
+
+        // 3. Fetch profiles for those user IDs
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', userIds)
+
+        if (profilesError) throw profilesError
+
+        // 4. Create a map for easy lookup
+        const profilesMap = new Map(profilesData.map(p => [p.id, p]))
         
-        // Transform the data to match our Project interface
-        const transformedData = (data || []).map((project: any) => ({
+        // 5. Combine data
+        const transformedData = data.map((project: any) => ({
           id: project.id,
           title: project.challenges.title,
           description: project.description,
@@ -63,9 +82,7 @@ export default function Explore() {
             title: project.challenges.title,
             type: project.challenges.type,
           },
-          user: {
-            username: project.profiles.username,
-          },
+          user: profilesMap.get(project.user_id) || { username: 'Unknown' },
           guild: project.guilds ? { name: project.guilds.name } : null,
           team: null, // Team data structure is complex, setting to null for now
           votes_count: 0, // votes_count is not available in the schema

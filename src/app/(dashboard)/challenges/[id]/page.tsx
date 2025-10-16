@@ -66,26 +66,36 @@ export default function ChallengeDetail() {
           .from('submissions')
           .select(`
             id,
+            user_id,
             project_url,
             description,
-            user:profiles!user_id(username),
-            team:tag_teams(name),
-            guild:guilds(name),
-            votes_count
+            guilds(name)
           `)
           .eq('challenge_id', id)
         
         if (submissionsError) throw submissionsError
-        
-        // Transform the data to match our Submission interface
-        const transformedData = (submissionsData || []).map((submission: any) => ({
-          ...submission,
-          user: submission.user || { username: 'Unknown' },
-          team: submission.team?.[0] || null,
-          guild: submission.guild?.[0] || null
-        }))
-        
-        setSubmissions(transformedData)
+
+        if (!submissionsData) {
+          setSubmissions([])
+        } else {
+          const userIds = [...new Set(submissionsData.map(s => s.user_id))]
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, username')
+            .in('id', userIds)
+          
+          if (profilesError) throw profilesError
+          const profilesMap = new Map(profilesData.map(p => [p.id, p]))
+
+          const transformedData = submissionsData.map((submission: any) => ({
+            ...submission,
+            user: profilesMap.get(submission.user_id) || { username: 'Unknown' },
+            team: null, // team data not available this way
+            guild: submission.guilds,
+            votes_count: 0 // votes_count not available
+          }))
+          setSubmissions(transformedData)
+        }
         
         // Check if user has submitted
         if (user) {
