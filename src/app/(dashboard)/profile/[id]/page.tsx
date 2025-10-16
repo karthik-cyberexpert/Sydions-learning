@@ -58,7 +58,7 @@ export default function PublicProfilePage() {
         const { data: requestData } = await supabase
           .from('friend_requests')
           .select('status, sender_id')
-          .or(`(sender_id.eq.${currentUser.id},receiver_id.eq.${id}),(sender_id.eq.${id},receiver_id.eq.${currentUser.id})`)
+          .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${currentUser.id})`)
           .single()
 
         if (requestData) {
