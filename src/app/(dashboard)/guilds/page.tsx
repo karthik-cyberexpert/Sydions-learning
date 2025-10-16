@@ -27,66 +27,82 @@ export default function Guilds() {
   useEffect(() => {
     const fetchGuilds = async () => {
       try {
-        // Fetch all guilds
+        // Fetch all guilds from the leaderboard view
         const { data: guildsData, error: guildsError } = await supabase
-          .from('guilds')
-          .select(`
-            id,
-            name,
-            description,
-            leader_id,
-            points,
-            created_at,
-            members_count:guild_members(count)
-          `)
-          .order('points', { ascending: false })
-        
-        if (guildsError) throw guildsError
-        
-        // Transform the data
+          .from('guild_leaderboard')
+          .select('id, name, description, owner_id, total_xp, member_count, created_at')
+          .order('total_xp', { ascending: false });
+
+        if (guildsError) throw guildsError;
+
         const transformedGuilds = (guildsData || []).map((guild: any) => ({
-          ...guild,
-          members_count: guild.members_count?.[0]?.count || 0
-        }))
-        
-        setGuilds(transformedGuilds)
-        
+          id: guild.id,
+          name: guild.name,
+          description: guild.description,
+          leader_id: guild.owner_id,
+          points: guild.total_xp || 0,
+          members_count: guild.member_count || 0,
+          created_at: guild.created_at,
+        }));
+        setGuilds(transformedGuilds);
+
         // Check if user is in a guild
         if (user) {
-          const { data: userGuildData, error: userGuildError } = await supabase
-            .from('guilds')
-            .select(`
-              id,
-              name,
-              description,
-              leader_id,
-              points,
-              created_at,
-              members_count:guild_members(count)
-            `)
-            .eq('guild_members.user_id', user.id)
-            .single()
-          
-          if (!userGuildError && userGuildData) {
-            setUserGuild({
-              ...userGuildData,
-              members_count: userGuildData.members_count?.[0]?.count || 0
-            })
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('guild_id')
+            .eq('id', user.id)
+            .single();
+
+          if (profileError) {
+            console.warn('Could not fetch user profile for guild check:', profileError.message);
+          }
+
+          if (profileData?.guild_id) {
+            const userGuildFromList = transformedGuilds.find(g => g.id === profileData.guild_id);
+            if (userGuildFromList) {
+              setUserGuild(userGuildFromList);
+            } else {
+              // If not in the main list (e.g., a new guild with 0 points), fetch it separately
+              const { data: separateGuildData, error: separateGuildError } = await supabase
+                .from('guild_leaderboard')
+                .select('id, name, description, owner_id, total_xp, member_count, created_at')
+                .eq('id', profileData.guild_id)
+                .single();
+              
+              if (separateGuildError) throw separateGuildError;
+
+              if (separateGuildData) {
+                setUserGuild({
+                  id: separateGuildData.id,
+                  name: separateGuildData.name,
+                  description: separateGuildData.description,
+                  leader_id: separateGuildData.owner_id,
+                  points: separateGuildData.total_xp || 0,
+                  members_count: separateGuildData.member_count || 0,
+                  created_at: separateGuildData.created_at,
+                });
+              }
+            }
           }
         }
       } catch (error) {
-        console.error('Error fetching guilds:', error)
+        console.error('Error fetching guilds:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
+    };
+
+    if (user) {
+      fetchGuilds();
+    } else {
+      setLoading(false);
     }
-    
-    fetchGuilds()
-  }, [user])
+  }, [user]);
 
   const filteredGuilds = guilds.filter(guild => 
     guild.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    guild.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (guild.description && guild.description.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   if (loading) {
@@ -218,7 +234,7 @@ export default function Guilds() {
                   </div>
                 </div>
                 <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                  {guild.description.substring(0, 100)}...
+                  {guild.description && guild.description.substring(0, 100)}...
                 </p>
                 <div className="mt-4 flex justify-between items-center">
                   <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">

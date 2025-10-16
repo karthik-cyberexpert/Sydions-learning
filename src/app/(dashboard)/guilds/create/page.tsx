@@ -31,6 +31,8 @@ export default function CreateGuild() {
     setError(null)
     
     try {
+      if (!user) throw new Error('You must be logged in to create a guild.');
+
       // Validate form data
       if (!formData.name.trim()) {
         throw new Error('Guild name is required')
@@ -45,13 +47,14 @@ export default function CreateGuild() {
       }
       
       // Insert the new guild
+      // The on_guild_created trigger will handle setting the user's profile guild_id and is_guildleader status.
       const { data: guildData, error: guildError } = await supabase
         .from('guilds')
         .insert([
           {
             name: formData.name,
             description: formData.description,
-            leader_id: user?.id
+            owner_id: user.id
           }
         ])
         .select()
@@ -59,22 +62,15 @@ export default function CreateGuild() {
       
       if (guildError) throw guildError
       
-      // Add the creator as a member of the guild
-      const { error: memberError } = await supabase
-        .from('guild_members')
-        .insert([
-          {
-            guild_id: guildData.id,
-            user_id: user?.id
-          }
-        ])
-      
-      if (memberError) throw memberError
-      
       // Redirect to the new guild page
       router.push(`/guilds/${guildData.id}`)
     } catch (error: any) {
-      setError(error.message)
+      // The trigger might raise an exception if the user is already in a guild.
+      if (error.message.includes('User is already in a guild')) {
+        setError('You are already in a guild. You must leave your current guild to create a new one.');
+      } else {
+        setError(error.message);
+      }
     } finally {
       setLoading(false)
     }

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
-import { FiUsers, FiStar, FiShield, FiUser, FiCalendar, FiAlertCircle } from 'react-icons/fi'
+import { FiUsers, FiStar, FiUser, FiCalendar, FiAlertCircle, FiLogIn, FiLogOut, FiCrown } from 'react-icons/fi'
 import Link from 'next/link'
 import ChatPanel from '@/components/ChatPanel'
 
@@ -12,17 +12,13 @@ interface Guild {
   id: string
   name: string
   description: string
-  leader_id: string
-  points: number
+  owner_id: string
   created_at: string
 }
 
 interface Member {
   id: string
-  user: {
-    username: string
-  }
-  joined_at: string
+  username: string
 }
 
 export default function GuildDetail() {
@@ -31,123 +27,107 @@ export default function GuildDetail() {
   const { id } = useParams()
   const [guild, setGuild] = useState<Guild | null>(null)
   const [members, setMembers] = useState<Member[]>([])
+  const [guildPoints, setGuildPoints] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isMember, setIsMember] = useState(false)
   const [isLeader, setIsLeader] = useState(false)
 
-  useEffect(() => {
-    const fetchGuild = async () => {
-      if (!id) return
+  const fetchGuildData = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch guild details
+      const { data: guildData, error: guildError } = await supabase
+        .from('guilds')
+        .select('id, name, description, owner_id, created_at')
+        .eq('id', id)
+        .single();
+
+      if (guildError) throw guildError;
+      setGuild(guildData);
+
+      // Fetch guild points from leaderboard view
+      const { data: leaderboardData, error: leaderboardError } = await supabase
+        .from('guild_leaderboard')
+        .select('total_xp')
+        .eq('id', id)
+        .single();
       
-      try {
-        // Fetch guild details
-        const { data: guildData, error: guildError } = await supabase
-          .from('guilds')
-          .select('*')
-          .eq('id', id)
-          .single()
+      if (leaderboardError) console.warn("Could not fetch guild points", leaderboardError.message);
+      setGuildPoints(leaderboardData?.total_xp || 0);
+
+      // Fetch guild members
+      const { data: membersData, error: membersError } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('guild_id', id);
+
+      if (membersError) throw membersError;
+      setMembers(membersData || []);
+
+      // Check user's membership status
+      if (user) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('guild_id, is_guildleader')
+          .eq('id', user.id)
+          .single();
         
-        if (guildError) throw guildError
-        setGuild(guildData)
-        
-        // Check if user is a member
-        if (user) {
-          const { data: memberData, error: memberError } = await supabase
-            .from('guild_members')
-            .select('id')
-            .eq('guild_id', id)
-            .eq('user_id', user.id)
-            .single()
-          
-          if (!memberError && memberData) {
-            setIsMember(true)
-            setIsLeader(guildData.leader_id === user.id)
-          }
-        }
-        
-        // Fetch guild members
-        const { data: membersData, error: membersError } = await supabase
-          .from('guild_members')
-          .select(`
-            id,
-            joined_at,
-            user:profiles(username)
-          `)
-          .eq('guild_id', id)
-        
-        if (membersError) throw membersError
-        
-        // Transform the data
-        const transformedMembers = (membersData || []).map((member: any) => ({
-          ...member,
-          user: member.user?.[0] || { username: 'Unknown' }
-        }))
-        
-        setMembers(transformedMembers)
-      } catch (error: any) {
-        setError(error.message)
-      } finally {
-        setLoading(false)
+        if (profileError) throw profileError;
+
+        const isUserMember = profileData?.guild_id === id;
+        setIsMember(isUserMember);
+        setIsLeader(isUserMember && profileData.is_guildleader);
       }
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    fetchGuild()
-  }, [id, user])
+  }, [id, user]);
+
+  useEffect(() => {
+    fetchGuildData();
+  }, [fetchGuildData]);
 
   const handleJoinGuild = async () => {
-    if (!user) return
-    
+    if (!user) return;
+    setError(null);
     try {
       const { error } = await supabase
-        .from('guild_members')
-        .insert([
-          {
-            guild_id: id,
-            user_id: user.id
-          }
-        ])
+        .from('profiles')
+        .update({ guild_id: id })
+        .eq('id', user.id);
       
-      if (error) throw error
+      if (error) throw error;
       
-      setIsMember(true)
-      setMembers(prev => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          user: { username: user.email?.split('@')[0] || 'User' },
-          joined_at: new Date().toISOString()
-        }
-      ])
+      await fetchGuildData(); // Re-fetch all data to ensure consistency
     } catch (error: any) {
-      setError(error.message)
+      setError(error.message);
     }
-  }
+  };
 
   const handleLeaveGuild = async () => {
-    if (!user) return
-    
-    try {
-      // Check if user is the leader
-      if (isLeader) {
-        setError('Guild leaders cannot leave their guild. Please delete the guild instead.')
-        return
-      }
-      
-      const { error } = await supabase
-        .from('guild_members')
-        .delete()
-        .eq('guild_id', id)
-        .eq('user_id', user.id)
-      
-      if (error) throw error
-      
-      setIsMember(false)
-      setMembers(prev => prev.filter(member => member.user.username !== (user.email?.split('@')[0] || 'User')))
-    } catch (error: any) {
-      setError(error.message)
+    if (!user || isLeader) {
+      setError('Guild leaders cannot leave their guild. Please delete the guild instead.');
+      return;
     }
-  }
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ guild_id: null, is_guildleader: false })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      await fetchGuildData(); // Re-fetch all data
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -157,7 +137,7 @@ export default function GuildDetail() {
     )
   }
 
-  if (error) {
+  if (error && !guild) {
     return (
       <div className="rounded-md bg-red-50 p-4">
         <div className="flex">
@@ -220,21 +200,23 @@ export default function GuildDetail() {
             <div className="mt-4 md:mt-0">
               {isMember ? (
                 <button
-                  onClick={isLeader ? undefined : handleLeaveGuild}
+                  onClick={handleLeaveGuild}
                   disabled={isLeader}
-                  className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md ${
+                  className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm ${
                     isLeader 
-                      ? 'text-gray-400 bg-gray-100 cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400' 
-                      : 'text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600'
+                      ? 'text-gray-400 bg-gray-100 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400' 
+                      : 'text-white bg-red-600 hover:bg-red-700'
                   }`}
                 >
-                  {isLeader ? 'Guild Leader' : 'Leave Guild'}
+                  <FiLogOut className="mr-2" />
+                  {isLeader ? 'You are the Leader' : 'Leave Guild'}
                 </button>
               ) : (
                 <button
                   onClick={handleJoinGuild}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
                 >
+                  <FiLogIn className="mr-2" />
                   Join Guild
                 </button>
               )}
@@ -250,7 +232,7 @@ export default function GuildDetail() {
               <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
                 <div className="flex items-center">
                   <FiStar className="mr-2" />
-                  {guild.points}
+                  {guildPoints}
                 </div>
               </dd>
             </div>
@@ -302,16 +284,14 @@ export default function GuildDetail() {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {member.user.username}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          Joined {new Date(member.joined_at).toLocaleDateString()}
+                          {member.username}
                         </div>
                       </div>
                     </div>
                     <div>
-                      {guild.leader_id === member.user.username && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                      {guild.owner_id === member.id && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                          <FiCrown className="mr-1 -ml-0.5 h-4 w-4" />
                           Leader
                         </span>
                       )}
