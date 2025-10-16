@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import { FiHome, FiCalendar, FiUsers, FiBarChart2, FiSettings, FiLogOut, FiMoon, FiSun } from 'react-icons/fi'
+import { FiHome, FiCalendar, FiUsers, FiBarChart2, FiSettings, FiLogOut, FiMoon, FiSun, FiAward, FiShoppingBag } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
+import { supabase } from '@/lib/supabaseClient' // Import supabase to check admin status
 
 export default function AdminLayout({
   children,
@@ -28,9 +29,16 @@ export default function AdminLayout({
       if (!user) return
       
       try {
-        // In a real app, you would check the user's role in the database
-        // For now, we'll just check if the email contains "admin"
-        if (user.email?.includes('admin')) {
+        // Check the user's role in the database
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+        
+        if (error) throw error
+        
+        if (profile?.is_admin) {
           setIsAdmin(true)
         } else {
           // Redirect non-admin users to the regular dashboard
@@ -57,6 +65,8 @@ export default function AdminLayout({
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: FiHome },
     { name: 'Challenges', href: '/admin/challenges', icon: FiCalendar },
+    { name: 'Manage Shop', href: '/admin/shop', icon: FiShoppingBag },
+    { name: 'Manage Levels', href: '/admin/levels', icon: FiAward },
     { name: 'Users', href: '/admin/users', icon: FiUsers },
     { name: 'Reports', href: '/admin/reports', icon: FiBarChart2 },
     { name: 'Settings', href: '/admin/settings', icon: FiSettings },
