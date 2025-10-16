@@ -55,13 +55,17 @@ export default function PublicProfilePage() {
       setProfile({ ...profileData, rank })
 
       if (currentUser) {
-        const { data: requestData } = await supabase
+        const { data: requestDataArray, error: requestError } = await supabase
           .from('friend_requests')
           .select('status, sender_id')
           .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${currentUser.id})`)
-          .single()
+          .limit(1)
 
-        if (requestData) {
+        if (requestError) {
+          console.error("Error fetching friendship status:", requestError)
+          setFriendshipStatus('not_friends')
+        } else if (requestDataArray && requestDataArray.length > 0) {
+          const requestData = requestDataArray[0]
           if (requestData.status === 'accepted') setFriendshipStatus('friends')
           else if (requestData.sender_id === currentUser.id) setFriendshipStatus('request_sent')
           else setFriendshipStatus('request_received')
