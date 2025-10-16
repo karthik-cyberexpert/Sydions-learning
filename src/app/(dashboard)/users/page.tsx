@@ -6,8 +6,8 @@ import { supabase } from '@/lib/supabaseClient'
 import { FiSearch, FiUserPlus, FiClock, FiCheck } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
-// Define types
 type Profile = {
   id: string
   username: string
@@ -40,7 +40,6 @@ export default function UsersPage() {
     setLoading(true)
     try {
       if (!user) return;
-      // Fetch all users except the current one
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url')
@@ -49,7 +48,6 @@ export default function UsersPage() {
       if (usersError) throw usersError
       setUsers(usersData || [])
 
-      // Fetch all friend requests involving the current user
       const { data: requestsData, error: requestsError } = await supabase
         .from('friend_requests')
         .select('*')
@@ -102,83 +100,38 @@ export default function UsersPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    )
+    return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Find Users</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Search for users and send them friend requests.
-        </p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Search for users and send them friend requests.</p>
       </div>
 
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <FiSearch className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="text"
-          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-          placeholder="Search by username or name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><FiSearch className="h-5 w-5 text-gray-400" /></div>
+        <input type="text" className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white" placeholder="Search by username or name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filteredUsers.map((u, index) => {
           const status = getFriendshipStatus(u.id)
           return (
-            <motion.div
-              key={u.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6 flex flex-col items-center text-center"
-            >
-              <div className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mb-4">
-                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-300">
-                  {u.username?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">{u.username}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{u.full_name}</p>
+            <motion.div key={u.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6 flex flex-col items-center text-center">
+              <Link href={`/profile/${u.id}`} className="w-full">
+                <div className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mb-4 mx-auto">
+                  <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-300">{u.username?.charAt(0).toUpperCase()}</span>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">{u.username}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{u.full_name}</p>
+              </Link>
               <div className="mt-4">
-                {status === 'not_friends' && (
-                  <button
-                    onClick={() => sendFriendRequest(u.id)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    <FiUserPlus className="mr-2" /> Add Friend
-                  </button>
-                )}
-                {status === 'request_sent' && (
-                  <button
-                    disabled
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 cursor-not-allowed"
-                  >
-                    <FiClock className="mr-2" /> Request Sent
-                  </button>
-                )}
-                {status === 'request_received' && (
-                  <button
-                    onClick={() => router.push('/friends')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                  >
-                    Respond to Request
-                  </button>
-                )}
-                {status === 'friends' && (
-                  <div className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 dark:bg-green-900 dark:text-green-200 rounded-md">
-                    <FiCheck className="mr-2" /> Friends
-                  </div>
-                )}
+                {status === 'not_friends' && <button onClick={() => sendFriendRequest(u.id)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"><FiUserPlus className="mr-2" /> Add Friend</button>}
+                {status === 'request_sent' && <button disabled className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-300"><FiClock className="mr-2" /> Request Sent</button>}
+                {status === 'request_received' && <button onClick={() => router.push('/friends')} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600">Respond to Request</button>}
+                {status === 'friends' && <div className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 dark:bg-green-900 dark:text-green-200 rounded-md"><FiCheck className="mr-2" /> Friends</div>}
               </div>
             </motion.div>
           )
