@@ -29,19 +29,41 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
   useEffect(() => {
     const fetchMessages = async () => {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`*, profiles ( username, avatar_url )`)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true })
+      setLoading(true);
+      try {
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('messages')
+          .select(`*`)
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching messages:', error)
-      } else {
-        setMessages(data as any)
+        if (messagesError) throw messagesError;
+
+        if (!messagesData || messagesData.length === 0) {
+          setMessages([]);
+          return;
+        }
+
+        const userIds = [...new Set(messagesData.map(m => m.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+        const fullMessages = messagesData.map(message => ({
+          ...message,
+          profiles: profilesMap.get(message.user_id) || { username: 'Unknown', avatar_url: null }
+        }));
+
+        setMessages(fullMessages as any);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false)
     }
 
     if (conversationId) {
