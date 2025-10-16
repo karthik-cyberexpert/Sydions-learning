@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import { FiHome, FiCompass, FiUser, FiUsers, FiAward, FiSettings, FiLogOut, FiMoon, FiSun, FiShield, FiUserPlus, FiShoppingBag } from 'react-icons/fi'
+import { FiHome, FiCompass, FiUser, FiUsers, FiAward, FiSettings, FiLogOut, FiMoon, FiSun, FiShield, FiUserPlus, FiShoppingBag, FiMessageSquare } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
 
 export default function DashboardLayout({
@@ -34,6 +34,7 @@ export default function DashboardLayout({
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome },
     { name: 'Explore', href: '/explore', icon: FiCompass },
+    { name: 'Messages', href: '/messages', icon: FiMessageSquare },
     { name: 'Shop', href: '/shop', icon: FiShoppingBag },
     { name: 'Profile', href: '/profile', icon: FiUser },
     { name: 'Friends', href: '/friends', icon: FiUserPlus },

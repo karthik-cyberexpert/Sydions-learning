@@ -95,6 +95,25 @@ export default function PublicProfilePage() {
     }
   }
 
+  const handleStartConversation = async () => {
+    if (!currentUser) return router.push('/sign-in')
+    if (!profile) return
+
+    try {
+        const { data: conversationId, error } = await supabase.rpc('find_or_create_dm_conversation', {
+            p_other_user_id: profile.id
+        })
+
+        if (error) throw error
+
+        if (conversationId) {
+            router.push(`/messages?conversationId=${conversationId}`)
+        }
+    } catch (err) {
+        console.error("Error starting conversation:", err)
+    }
+  }
+
   const renderFriendButton = () => {
     switch (friendshipStatus) {
       case 'friends':
@@ -134,7 +153,7 @@ export default function PublicProfilePage() {
           </div>
           <div className="flex space-x-2">
             {renderFriendButton()}
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"><FiMessageSquare className="mr-2" /> Message</button>
+            <button onClick={handleStartConversation} className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"><FiMessageSquare className="mr-2" /> Message</button>
           </div>
         </div>
       </div>
