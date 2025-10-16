@@ -73,7 +73,13 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`messages-${conversationId}`)
+      .channel(`messages-${conversationId}`, {
+        config: {
+          broadcast: {
+            self: true,
+          },
+        },
+      })
       .on(
         'postgres_changes',
         {
