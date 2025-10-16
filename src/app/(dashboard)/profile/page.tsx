@@ -331,7 +331,7 @@ export default function Profile() {
             <div className="flex items-center"><FiAward className="h-6 w-6 text-yellow-500 mr-3" /><dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Coins</dt></div>
             <dd className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{profile.coins}</dd>
           </motion.div>
-        </motion.div>
+        </div>
       </>
     )
   }
