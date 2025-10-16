@@ -16,6 +16,17 @@ interface Message {
   }
 }
 
+interface ConversationDetails {
+  name: string | null
+  type: 'dm' | 'group'
+  participants: {
+    profiles: {
+      id: string
+      username: string
+    }
+  }[]
+}
+
 interface ChatWindowProps {
   conversationId: string
 }
@@ -23,6 +34,7 @@ interface ChatWindowProps {
 export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
+  const [conversationDetails, setConversationDetails] = useState<ConversationDetails | null>(null)
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -64,12 +76,34 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   }, [conversationId]);
 
+  const fetchConversationDetails = useCallback(async () => {
+    if (!conversationId || !user) return;
+    const { data, error } = await supabase
+      .from('conversations')
+      .select(`
+        name,
+        type,
+        participants:conversation_participants(
+          profiles(id, username)
+        )
+      `)
+      .eq('id', conversationId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching conversation details", error);
+    } else {
+      setConversationDetails(data as any);
+    }
+  }, [conversationId, user]);
+
   useEffect(() => {
     if (conversationId) {
       setLoading(true);
+      fetchConversationDetails();
       fetchMessages();
     }
-  }, [conversationId, fetchMessages]);
+  }, [conversationId, fetchMessages, fetchConversationDetails]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -120,12 +154,25 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   }
 
+  const getConversationName = () => {
+    if (!conversationDetails || !user) return 'Chat';
+    if (conversationDetails.type === 'group') {
+      return conversationDetails.name;
+    }
+    // For DMs, find the other user's name
+    const otherUser = conversationDetails.participants.find(p => p.profiles.id !== user.id);
+    return otherUser?.profiles.username || 'Chat';
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center h-full"><p className="text-gray-500 dark:text-gray-400">Loading messages...</p></div>
   }
 
   return (
     <div className="flex flex-col h-full">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="font-semibold text-lg">{getConversationName()}</h3>
+      </div>
       <div className="flex-grow p-4 overflow-y-auto">
         <div className="space-y-4">
           {messages.map((message) => (

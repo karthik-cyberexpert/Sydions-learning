@@ -3,14 +3,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { FiPlus, FiSearch } from 'react-icons/fi'
+import { FiPlus, FiSearch, FiUsers } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
+import CreateGroupModal from './CreateGroupModal'
 
 interface Conversation {
   conversation_id: string
   last_message_at: string
   last_message_content: string | null
-  other_user_id: string
+  other_user_id: string | null
   other_user_username: string
   other_user_avatar_url: string | null
 }
@@ -34,6 +35,7 @@ export default function ConversationList({ selectedConversationId, onSelectConve
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchConversations = useCallback(async () => {
@@ -118,8 +120,19 @@ export default function ConversationList({ selectedConversationId, onSelectConve
     await handleSelectUser(user.id)
   }
 
+  const handleGroupCreated = (conversationId: string) => {
+    setIsGroupModalOpen(false)
+    fetchConversations()
+    onSelectConversation(conversationId)
+  }
+
   return (
     <div className="flex flex-col h-full">
+      <CreateGroupModal
+        isOpen={isGroupModalOpen}
+        onClose={() => setIsGroupModalOpen(false)}
+        onGroupCreated={handleGroupCreated}
+      />
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Messages</h2>
@@ -138,8 +151,8 @@ export default function ConversationList({ selectedConversationId, onSelectConve
                   <button onClick={handleMyChat} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     My Chat
                   </button>
-                  <button disabled className="block w-full text-left px-4 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed">
-                    New Group (Soon)
+                  <button onClick={() => { setIsGroupModalOpen(true); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    New Group
                   </button>
                 </motion.div>
               )}
@@ -197,7 +210,11 @@ export default function ConversationList({ selectedConversationId, onSelectConve
                       }`}
                     >
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                        <span className="font-bold text-gray-600">{convo.other_user_username?.charAt(0).toUpperCase()}</span>
+                        {convo.other_user_id ? (
+                          <span className="font-bold text-gray-600">{convo.other_user_username?.charAt(0).toUpperCase()}</span>
+                        ) : (
+                          <FiUsers className="text-gray-600" />
+                        )}
                       </div>
                       <div className="flex-grow overflow-hidden">
                         <p className="font-semibold text-gray-900 dark:text-white">{convo.other_user_username}</p>
