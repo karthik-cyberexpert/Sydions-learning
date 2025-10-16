@@ -41,34 +41,21 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
   const fetchMessages = useCallback(async () => {
     try {
-      const { data: messagesData, error: messagesError } = await supabase
+      const { data, error } = await supabase
         .from('messages')
-        .select(`*`)
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles ( username, avatar_url )
+        `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
-      if (messagesError) throw messagesError;
+      if (error) throw error;
 
-      if (!messagesData || messagesData.length === 0) {
-        setMessages([]);
-        return;
-      }
-
-      const userIds = [...new Set(messagesData.map(m => m.user_id))];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      const profilesMap = new Map(profilesData.map(p => [p.id, p]));
-      const fullMessages = messagesData.map(message => ({
-        ...message,
-        profiles: profilesMap.get(message.user_id) || { username: 'Unknown', avatar_url: null }
-      }));
-
-      setMessages(fullMessages as any);
+      setMessages((data as any) || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
