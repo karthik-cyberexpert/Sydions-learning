@@ -27,13 +27,13 @@ export default function AdminDashboard() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('role')
+          .select('is_admin')
           .eq('id', user.id)
           .single()
         
         if (error) throw error
         
-        if (data?.role === 'admin') {
+        if (data?.is_admin) {
           setIsAdmin(true)
           fetchStats()
         } else {

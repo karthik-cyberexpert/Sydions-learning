@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import { FiHome, FiCompass, FiUser, FiUsers, FiAward, FiSettings, FiLogOut, FiMoon, FiSun, FiShield, FiUserPlus, FiShoppingBag, FiMessageSquare } from 'react-icons/fi'
+import { FiHome, FiCompass, FiUser, FiUsers, FiAward, FiSettings, FiLogOut, FiMoon, FiSun, FiShield, FiUserPlus, FiShoppingBag, FiMessageSquare, FiCpu } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function DashboardLayout({
   children,
@@ -17,10 +18,39 @@ export default function DashboardLayout({
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setIsAdmin(false)
+        return
+      }
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+        
+        if (error) {
+          console.error('Error checking admin status:', error.message)
+          setIsAdmin(false)
+          return
+        }
+        
+        setIsAdmin(profile?.is_admin || false)
+      } catch (error) {
+        console.error('Error checking admin status:', error)
+        setIsAdmin(false)
+      }
+    }
+    checkAdminStatus()
+  }, [user])
 
   const handleSignOut = async () => {
     await signOut()
@@ -43,6 +73,10 @@ export default function DashboardLayout({
     { name: 'Leaderboard', href: '/leaderboard', icon: FiAward },
     { name: 'Settings', href: '/settings', icon: FiSettings },
   ]
+
+  if (isAdmin) {
+    navigation.splice(1, 0, { name: 'Admin Panel', href: '/admin/dashboard', icon: FiCpu })
+  }
 
   return (
     <ProtectedRoute>
