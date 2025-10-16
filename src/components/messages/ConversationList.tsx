@@ -34,15 +34,18 @@ export default function ConversationList({ selectedConversationId, onSelectConve
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return
       setLoading(true)
-      const { data, error } = await supabase.rpc('get_user_conversations')
+      setError(null)
+      const { data, error: rpcError } = await supabase.rpc('get_user_conversations')
       
-      if (error) {
-        console.error('Error fetching conversations:', error)
+      if (rpcError) {
+        console.error('Error fetching conversations:', rpcError)
+        setError('Could not load conversations. Please try again later.')
       } else {
         setConversations(data || [])
       }
@@ -99,6 +102,7 @@ export default function ConversationList({ selectedConversationId, onSelectConve
     })
     if (error) {
       console.error('Error starting conversation:', error)
+      setError('Could not start conversation.')
     } else {
       onSelectConversation(conversationId)
       setSearchTerm('')
@@ -175,6 +179,8 @@ export default function ConversationList({ selectedConversationId, onSelectConve
           <>
             {loading ? (
               <p className="p-4 text-center text-gray-500 dark:text-gray-400">Loading conversations...</p>
+            ) : error ? (
+              <p className="p-4 text-center text-red-500">{error}</p>
             ) : conversations.length === 0 ? (
               <p className="p-4 text-center text-gray-500 dark:text-gray-400">No conversations yet.</p>
             ) : (
