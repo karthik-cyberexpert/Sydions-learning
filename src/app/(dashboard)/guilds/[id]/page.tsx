@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
 import { FiUsers, FiStar, FiShield, FiUser, FiCalendar, FiAlertCircle } from 'react-icons/fi'
 import Link from 'next/link'
+import ChatPanel from '@/components/ChatPanel'
 
 interface Guild {
   id: string
@@ -322,6 +323,9 @@ export default function GuildDetail() {
           </ul>
         </div>
       </div>
+
+      {/* Guild Chat */}
+      {isMember && guild && <ChatPanel guildId={guild.id} />}
     </div>
   )
 }
