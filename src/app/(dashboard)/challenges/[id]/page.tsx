@@ -68,7 +68,7 @@ export default function ChallengeDetail() {
             id,
             project_url,
             description,
-            user:profiles(username),
+            user:profiles!user_id(username),
             team:tag_teams(name),
             guild:guilds(name),
             votes_count
@@ -80,7 +80,7 @@ export default function ChallengeDetail() {
         // Transform the data to match our Submission interface
         const transformedData = (submissionsData || []).map((submission: any) => ({
           ...submission,
-          user: submission.user?.[0] || { username: 'Unknown' },
+          user: submission.user || { username: 'Unknown' },
           team: submission.team?.[0] || null,
           guild: submission.guild?.[0] || null
         }))

@@ -45,7 +45,7 @@ export default function Explore() {
             live_url,
             created_at,
             challenges ( title, type ),
-            profiles ( username ),
+            profiles!user_id ( username ),
             guilds ( name )
           `)
           .order('created_at', { ascending: false })
