@@ -36,14 +36,23 @@ interface Submission {
   votes_count: number
 }
 
-// Define a type for the raw submission data fetched from Supabase
+// Type for the data returned when fetching ALL submissions (includes joined guild name)
 interface RawSubmissionData {
   id: string
   user_id: string
   live_url: string
   description: string
-  // Supabase sometimes returns a single object relationship as an array of one element or null/empty array.
   guilds: { name: string } | { name: string }[] | null
+}
+
+// Type for the data returned when checking if the CURRENT USER has submitted (raw IDs)
+interface UserSubmissionStatus {
+  id: string
+  user_id: string
+  live_url: string
+  description: string
+  guild_id: string | null
+  team_id: string | null
 }
 
 export default function ChallengeDetail() {
@@ -53,7 +62,7 @@ export default function ChallengeDetail() {
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userSubmission, setUserSubmission] = useState<RawSubmissionData | null>(null)
+  const [userSubmission, setUserSubmission] = useState<UserSubmissionStatus | null>(null)
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -123,7 +132,7 @@ export default function ChallengeDetail() {
             .single()
           
           if (!userSubmissionError && userSubmissionData) {
-            setUserSubmission(userSubmissionData as RawSubmissionData)
+            setUserSubmission(userSubmissionData as UserSubmissionStatus)
           }
         }
       } catch (error: unknown) {
