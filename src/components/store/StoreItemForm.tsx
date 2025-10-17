@@ -164,7 +164,7 @@ export default function StoreItemForm({ onSuccess, onError }: StoreItemFormProps
 
       <div>
         <label htmlFor="image-upload" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {type === 'avatar' ? 'Avatar Image' : 'Banner Image'}
+          {type === 'avatar' ? 'Avatar Image (Upload)' : 'Banner Image (Upload)'}
         </label>
         <input
           id="image-upload"
