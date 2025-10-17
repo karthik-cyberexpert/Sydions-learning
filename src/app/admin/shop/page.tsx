@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { FiPlus, FiEdit, FiTrash, FiAlertCircle, FiShoppingBag } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import { v4 as uuidv4 } from 'uuid'
 
 interface ShopItem {
   id: string
@@ -25,16 +26,17 @@ export default function AdminShop() {
   const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: 0,
-    image_url: '',
     item_type: 'avatar' as 'avatar' | 'banner' | 'badge',
     is_reward_only: false,
     is_for_guild: false,
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
 
   useEffect(() => {
     fetchItems()
@@ -60,12 +62,12 @@ export default function AdminShop() {
 
   const handleOpenModal = (item: ShopItem | null = null) => {
     setEditingItem(item)
+    setImageFile(null)
     if (item) {
       setFormData({
         name: item.name,
         description: item.description,
         price: item.price,
-        image_url: item.image_url || '',
         item_type: item.item_type,
         is_reward_only: item.is_reward_only,
         is_for_guild: item.is_for_guild || false,
@@ -75,7 +77,6 @@ export default function AdminShop() {
         name: '',
         description: '',
         price: 0,
-        image_url: '',
         item_type: 'avatar',
         is_reward_only: false,
         is_for_guild: false,
@@ -84,21 +85,69 @@ export default function AdminShop() {
     setIsModalOpen(true)
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImageFile(e.target.files[0])
+    } else {
+      setImageFile(null)
+    }
+  }
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${uuidv4()}.${fileExt}`
+    const filePath = `shop_items/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('store-assets') // Assuming a bucket named 'store-assets'
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (uploadError) {
+      throw new Error(`File upload failed: ${uploadError.message}`)
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('store-assets')
+      .getPublicUrl(filePath)
+
+    if (!publicUrlData || !publicUrlData.publicUrl) {
+      throw new Error('Could not retrieve public URL after upload.')
+    }
+
+    return publicUrlData.publicUrl
+  }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setIsSaving(true)
     
+    let imageUrl: string | null = editingItem?.image_url || null
+
     try {
+      // 1. Handle file upload if a new file is selected
+      if (imageFile) {
+        imageUrl = await uploadFile(imageFile)
+      } else if (!editingItem) {
+        // If creating a new item and no file is selected
+        throw new Error('Please upload an image for the new item.')
+      }
+
+      // 2. Prepare payload
       const payload = {
         name: formData.name,
         description: formData.description,
         price: formData.price,
-        image_url: formData.image_url || null,
+        image_url: imageUrl,
         item_type: formData.item_type,
         is_reward_only: formData.is_reward_only,
         is_for_guild: formData.is_for_guild,
       }
 
+      // 3. Insert or Update
       if (editingItem) {
         const { error } = await supabase.from('shop_items').update(payload).eq('id', editingItem.id)
         if (error) throw error
@@ -111,6 +160,8 @@ export default function AdminShop() {
       fetchItems()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -188,10 +239,37 @@ export default function AdminShop() {
                 <div><label htmlFor="item_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label><select name="item_type" id="item_type" required value={formData.item_type} onChange={(e) => setFormData({...formData, item_type: e.target.value as 'avatar' | 'banner' | 'badge'})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">{ITEM_TYPES.map(type => (<option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>))}</select></div>
                 <div><label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price (Coins)</label><input type="number" name="price" id="price" required min="0" value={formData.price} onChange={(e) => setFormData({...formData, price: parseInt(e.target.value)})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
               </div>
-              <div><label htmlFor="image_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Image URL</label><input type="url" name="image_url" id="image_url" value={formData.image_url} onChange={(e) => setFormData({...formData, image_url: e.target.value})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="https://example.com/image.png" /></div>
+              
+              {/* FILE UPLOAD INPUT */}
+              <div>
+                <label htmlFor="image-upload" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Image Upload {editingItem && editingItem.image_url && '(Current image exists)'}
+                </label>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  required={!editingItem}
+                  className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-indigo-50 file:text-indigo-700
+                    hover:file:bg-indigo-100
+                  "
+                />
+                {imageFile && (
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Selected file: {imageFile.name}
+                  </p>
+                )}
+              </div>
+              {/* END FILE UPLOAD INPUT */}
+
               <div className="flex items-center"><input type="checkbox" name="is_reward_only" id="is_reward_only" checked={formData.is_reward_only} onChange={(e) => setFormData({...formData, is_reward_only: e.target.checked})} className="h-4 w-4 text-indigo-600 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600" /><label htmlFor="is_reward_only" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">Reward Only (not in shop)</label></div>
               <div className="flex items-center"><input type="checkbox" name="is_for_guild" id="is_for_guild" checked={formData.is_for_guild} onChange={(e) => setFormData({...formData, is_for_guild: e.target.checked})} className="h-4 w-4 text-indigo-600 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600" /><label htmlFor="is_for_guild" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">For Guild Store</label></div>
-              <div className="flex justify-end space-x-3 pt-4"><button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">Cancel</button><button type="submit" className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">{editingItem ? 'Save Changes' : 'Create Item'}</button></div>
+              <div className="flex justify-end space-x-3 pt-4"><button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">Cancel</button><button type="submit" disabled={isSaving} className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">{isSaving ? 'Saving...' : editingItem ? 'Save Changes' : 'Create Item'}</button></div>
             </form>
           </div>
         </div>
