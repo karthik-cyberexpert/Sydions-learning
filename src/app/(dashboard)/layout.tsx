@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import { FiHome, FiCompass, FiUser, FiUsers, FiAward, FiSettings, FiLogOut, FiMoon, FiSun, FiShield, FiUserPlus, FiShoppingBag, FiMessageSquare, FiCpu, FiCalendar } from 'react-icons/fi'
+import { FiHome, FiCompass, FiUser, FiUsers, FiAward, FiSettings, FiLogOut, FiMoon, FiSun, FiShield, FiUserPlus, FiShoppingBag, FiMessageSquare, FiCpu, FiCalendar, FiPackage } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -74,6 +74,7 @@ export default function DashboardLayout({
     { name: 'Explore', href: '/explore', icon: FiCompass },
     { name: 'Messages', href: '/messages', icon: FiMessageSquare },
     { name: 'Shop', href: '/shop', icon: FiShoppingBag },
+    { name: 'Inventory', href: '/inventory', icon: FiPackage },
     { name: 'Profile', href: '/profile', icon: FiUser },
     { name: 'Friends', href: '/friends', icon: FiUserPlus },
     { name: 'Users', href: '/users', icon: FiUsers },
