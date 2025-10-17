@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { User } from '@supabase/supabase-js'
 import MessageItem from './MessageItem'
@@ -16,6 +16,7 @@ export interface Message {
   content: string
   created_at: string
   user_id: string
+  conversation_id: string
   profiles: ProfileData
 }
 
@@ -25,42 +26,20 @@ interface RawMessageData {
   content: string
   created_at: string
   user_id: string
+  conversation_id: string
   profiles: ProfileData[] // Supabase returns the joined table as an array
 }
 
 interface ChatWindowProps {
   user: User | null
+  conversationId: string
 }
 
-export default function ChatWindow({ user }: ChatWindowProps) {
+export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    fetchMessages()
-
-    const channel = supabase
-      .channel('public:messages')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          // When a new message comes in, fetch its profile data
-          fetchMessageWithProfile(payload.new.id)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('messages')
@@ -69,19 +48,19 @@ export default function ChatWindow({ user }: ChatWindowProps) {
           content,
           created_at,
           user_id,
+          conversation_id,
           profiles (
             username,
             avatar_url
           )
         `)
+        .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
 
       if (error) throw error;
 
-      // Transform the raw data to fit the Message[] type
       const transformedMessages = (data as RawMessageData[] || []).map(msg => ({
         ...msg,
-        // Safely access the first element of the profiles array
         profiles: msg.profiles?.[0] || { username: 'Unknown User', avatar_url: '' }
       }));
 
@@ -89,9 +68,9 @@ export default function ChatWindow({ user }: ChatWindowProps) {
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
-  }
+  }, [conversationId])
 
-  const fetchMessageWithProfile = async (messageId: string) => {
+  const fetchMessageWithProfile = useCallback(async (messageId: string) => {
     try {
       const { data, error } = await supabase
         .from('messages')
@@ -100,6 +79,7 @@ export default function ChatWindow({ user }: ChatWindowProps) {
           content,
           created_at,
           user_id,
+          conversation_id,
           profiles (
             username,
             avatar_url
@@ -110,7 +90,6 @@ export default function ChatWindow({ user }: ChatWindowProps) {
 
       if (error) throw error;
 
-      // Also transform the single new message
       const newMessage: Message = {
         ...(data as RawMessageData),
         profiles: (data as RawMessageData).profiles?.[0] || { username: 'Unknown User', avatar_url: '' }
@@ -120,14 +99,39 @@ export default function ChatWindow({ user }: ChatWindowProps) {
     } catch (error) {
       console.error('Error fetching new message with profile:', error);
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchMessages()
+
+    const channel = supabase
+      .channel('public:messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          if (payload.new.conversation_id === conversationId) {
+            fetchMessageWithProfile(payload.new.id)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [conversationId, fetchMessages, fetchMessageWithProfile])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleSendMessage = async (content: string) => {
     if (!user || !content.trim()) return
 
     const { error } = await supabase
       .from('messages')
-      .insert([{ content, user_id: user.id }])
+      .insert([{ content, user_id: user.id, conversation_id: conversationId }])
 
     if (error) {
       console.error('Error sending message:', error)
