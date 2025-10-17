@@ -1,147 +1,124 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { FiX, FiUsers } from 'react-icons/fi'
+import { User } from '@supabase/supabase-js'
+
+interface CreateGroupModalProps {
+  user: User | null
+  isOpen: boolean
+  onClose: () => void
+  onCreate: (groupName: string, memberIds: string[]) => void
+}
 
 interface Friend {
   id: string
   username: string
 }
 
+// This type now correctly reflects that Supabase returns joined tables as arrays.
 interface FriendRequestResponse {
-  sender: Friend
-  receiver: Friend
   sender_id: string
   receiver_id: string
+  sender: Friend[]
+  receiver: Friend[]
 }
 
-interface CreateGroupModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onGroupCreated: (conversationId: string) => void
-}
-
-export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }: CreateGroupModalProps) {
-  const { user } = useAuth()
+export default function CreateGroupModal({ user, isOpen, onClose, onCreate }: CreateGroupModalProps) {
   const [groupName, setGroupName] = useState('')
   const [friends, setFriends] = useState<Friend[]>([])
-  const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set())
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([])
 
-  useEffect(() => {
-    if (!isOpen || !user) return
+  const fetchFriends = useCallback(async () => {
+    if (!user) return
 
-    const fetchFriends = async () => {
+    try {
       const { data, error } = await supabase
         .from('friend_requests')
-        .select('sender:sender_id(id, username), receiver:receiver_id(id, username), sender_id, receiver_id')
+        .select(`
+          sender_id,
+          receiver_id,
+          sender:sender_id ( id, username ),
+          receiver:receiver_id ( id, username )
+        `)
         .eq('status', 'accepted')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
 
-      if (error) {
-        console.error('Error fetching friends:', error)
-        return
-      }
+      if (error) throw error
 
-      const friendProfiles = (data as FriendRequestResponse[]).map(r => (r.sender_id === user.id ? r.receiver : r.sender))
-      setFriends(friendProfiles)
+      if (data) {
+        // The logic is updated to access the first element of the sender/receiver array.
+        const friendProfiles = (data as FriendRequestResponse[]).map(r =>
+          (r.sender_id === user.id ? r.receiver[0] : r.sender[0])
+        )
+        setFriends(friendProfiles)
+      }
+    } catch (error) {
+      console.error('Error fetching friends:', error)
     }
+  }, [user])
 
-    fetchFriends()
-  }, [isOpen, user])
+  useEffect(() => {
+    if (isOpen) {
+      fetchFriends()
+    }
+  }, [isOpen, fetchFriends])
 
-  const handleSelectFriend = (friendId: string) => {
-    setSelectedFriends(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(friendId)) {
-        newSet.delete(friendId)
-      } else {
-        newSet.add(friendId)
-      }
-      return newSet
-    })
+  const handleToggleFriend = (friendId: string) => {
+    setSelectedFriends(prev =>
+      prev.includes(friendId)
+        ? prev.filter(id => id !== friendId)
+        : [...prev, friendId]
+    )
   }
 
-  const handleCreateGroup = async () => {
-    if (!groupName.trim() || selectedFriends.size === 0) {
-      setError('Please provide a group name and select at least one friend.')
-      return
-    }
-    setLoading(true)
-    setError(null)
-
-    try {
-      const { data: conversationId, error: rpcError } = await supabase.rpc('create_group_conversation', {
-        p_group_name: groupName,
-        p_member_ids: Array.from(selectedFriends),
-      })
-
-      if (rpcError) throw rpcError
-
-      onGroupCreated(conversationId)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
-    } finally {
-      setLoading(false)
+  const handleSubmit = () => {
+    if (groupName.trim() && selectedFriends.length > 0 && user) {
+      onCreate(groupName, [...selectedFriends, user.id])
+      // Reset state
+      setGroupName('')
+      setSelectedFriends([])
     }
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Create New Group</h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-            <FiX className="h-6 w-6" />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-4">Create Group Chat</h2>
         <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Group Name"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+          />
           <div>
-            <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Group Name</label>
-            <input
-              type="text"
-              id="groupName"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600"
-            />
-          </div>
-          <div>
-            <p className="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Friends</p>
-            <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-2 space-y-2">
-              {friends.length > 0 ? (
-                friends.map(friend => (
-                  <label key={friend.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={selectedFriends.has(friend.id)}
-                      onChange={() => handleSelectFriend(friend.id)}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                    />
-                    <span className="text-sm text-gray-900 dark:text-white">{friend.username}</span>
-                  </label>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 text-center">No friends found.</p>
-              )}
+            <h3 className="font-semibold mb-2">Select Members</h3>
+            <div className="max-h-48 overflow-y-auto border rounded-md p-2 dark:border-gray-600">
+              {friends.map(friend => (
+                <div key={friend.id} className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                  <span>{friend.username}</span>
+                  <input
+                    type="checkbox"
+                    checked={selectedFriends.includes(friend.id)}
+                    onChange={() => handleToggleFriend(friend.id)}
+                    className="form-checkbox h-5 w-5 text-indigo-600"
+                  />
+                </div>
+              ))}
             </div>
           </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <div className="flex justify-end">
-            <button
-              onClick={handleCreateGroup}
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-            >
-              <FiUsers className="mr-2" />
-              {loading ? 'Creating...' : `Create Group (${selectedFriends.size})`}
-            </button>
-          </div>
+        </div>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500">
+            Cancel
+          </button>
+          <button onClick={handleSubmit} className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50" disabled={!groupName.trim() || selectedFriends.length === 0}>
+            Create
+          </button>
         </div>
       </div>
     </div>
