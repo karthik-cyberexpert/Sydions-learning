@@ -54,19 +54,35 @@ export default function PublicProfilePage() {
 
     setLoading(true)
     try {
-      // 1. Fetch profile data including the calculated level
+      // 1. Fetch profile data including the calculated level number
       const { data: profileData, error: profileError } = await supabase
         .from('profiles_with_level')
-        .select('*, level_data:level(rank_name)')
+        .select('*') // FIX: Select all columns from the view
         .eq('id', id)
         .single()
 
       if (profileError) throw profileError
       
-      const rankName = profileData.level_data?.rank_name || 'Rookie'
+      let rankName = 'Rookie'
+      
+      // 2. Fetch rank name based on the level number
+      if (profileData.level) {
+        const { data: rankData, error: rankError } = await supabase
+          .from('levels')
+          .select('rank_name')
+          .eq('level', profileData.level)
+          .single()
+        
+        if (rankError && rankError.code !== 'PGRST116') { // PGRST116 means no rows found
+          console.warn('Error fetching rank name:', rankError)
+        }
+        
+        rankName = rankData?.rank_name || 'Rookie'
+      }
+      
       setProfile({ ...profileData, rank: rankName })
 
-      // 2. Fetch user submissions
+      // 3. Fetch user submissions
       const { data: submissionsData, error: submissionsError } = await supabase
         .from('submissions')
         .select(`
@@ -82,7 +98,7 @@ export default function PublicProfilePage() {
       if (submissionsError) throw submissionsError
       setSubmissions(submissionsData as any)
 
-      // 3. Fetch friendship status
+      // 4. Fetch friendship status
       if (currentUser) {
         const { data: requestDataArray, error: requestError } = await supabase
           .from('friend_requests')
@@ -191,7 +207,7 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* Stats (Removed Coins) */}
+      {/* Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-5">
           <div className="flex items-center"><FiAward className="h-6 w-6 text-indigo-500 mr-3" /><dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Rank</dt></div>
