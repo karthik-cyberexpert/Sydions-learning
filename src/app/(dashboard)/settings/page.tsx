@@ -6,11 +6,6 @@ import { supabase } from '@/lib/supabaseClient'
 import { FiUser, FiLock, FiSun, FiMoon } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
 
-type ProfileData = {
-  username: string | null
-  full_name: string | null
-}
-
 export default function SettingsPage() {
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()

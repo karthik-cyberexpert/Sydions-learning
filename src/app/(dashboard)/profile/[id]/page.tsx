@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { FiUser, FiAward, FiTrendingUp, FiGithub, FiLinkedin, FiGlobe, FiUserPlus, FiClock, FiCheck, FiMessageSquare, FiExternalLink } from 'react-icons/fi'
 import { getRankBadge } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
+// Removed unused Link import
 
 type Profile = {
   id: string

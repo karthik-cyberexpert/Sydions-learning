@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { FiUser, FiAward, FiPackage, FiAlertCircle, FiShield } from 'react-icons/fi'
+import { FiUser, FiAward, FiAlertCircle, FiShield } from 'react-icons/fi'
 
 interface ShopItemDetails {
   name: string

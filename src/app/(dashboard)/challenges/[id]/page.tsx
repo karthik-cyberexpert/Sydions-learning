@@ -42,7 +42,8 @@ interface RawSubmissionData {
   user_id: string
   live_url: string
   description: string
-  guilds: { name: string } | null
+  // Supabase sometimes returns a single object relationship as an array of one element or null/empty array.
+  guilds: { name: string } | { name: string }[] | null
 }
 
 export default function ChallengeDetail() {
@@ -95,15 +96,20 @@ export default function ChallengeDetail() {
           if (profilesError) throw profilesError
           const profilesMap = new Map(profilesData.map(p => [p.id, p]))
 
-          const transformedData: Submission[] = (submissionsData as RawSubmissionData[]).map((submission) => ({
-            id: submission.id,
-            live_url: submission.live_url,
-            description: submission.description,
-            user: profilesMap.get(submission.user_id) || { username: 'Unknown' },
-            team: null, // team data not available this way
-            guild: submission.guilds,
-            votes_count: 0 // votes_count not available
-          }))
+          const transformedData: Submission[] = (submissionsData as RawSubmissionData[]).map((submission) => {
+            // Safely extract the guild object, handling array or null returns
+            const guildData = Array.isArray(submission.guilds) ? submission.guilds[0] : submission.guilds;
+
+            return {
+              id: submission.id,
+              live_url: submission.live_url,
+              description: submission.description,
+              user: profilesMap.get(submission.user_id) || { username: 'Unknown' },
+              team: null, // team data not available this way
+              guild: guildData || null,
+              votes_count: 0 // votes_count not available
+            }
+          })
           setSubmissions(transformedData)
         }
         
