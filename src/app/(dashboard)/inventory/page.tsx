@@ -157,14 +157,19 @@ export default function InventoryPage() {
     }
   }
 
+  // Helper function to safely get the item type
+  const getItemType = (item: InventoryItem | GuildInventoryItem) => {
+    return item.shop_items?.[0]?.item_type;
+  };
+
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>
 
   const currentInventory = activeTab === 'user' ? personalInventory : guildInventory
   
-  // FIX: Access the item_type from the first element of the shop_items array
-  const avatars = currentInventory.filter(i => i.shop_items?.[0]?.item_type === 'avatar')
-  const banners = currentInventory.filter(i => i.shop_items?.[0]?.item_type === 'banner')
-  const badges = currentInventory.filter(i => i.shop_items?.[0]?.item_type === 'badge')
+  // Use the helper function for filtering
+  const avatars = currentInventory.filter(i => getItemType(i) === 'avatar')
+  const banners = currentInventory.filter(i => getItemType(i) === 'banner')
+  const badges = currentInventory.filter(i => getItemType(i) === 'badge')
   
   const isGuildTab = activeTab === 'guild'
 
