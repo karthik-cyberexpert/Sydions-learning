@@ -68,8 +68,8 @@ export default function CreateChallenge() {
       
       if (error) throw error
       
-      // Redirect to challenges page
-      router.push('/challenges')
+      // Redirect to admin challenges page
+      router.push('/admin/challenges')
     } catch (error: any) {
       setError(error.message)
     } finally {
