@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import { FiHome, FiCalendar, FiUsers, FiBarChart2, FiSettings, FiLogOut, FiMoon, FiSun, FiAward, FiShoppingBag } from 'react-icons/fi'
+import { FiHome, FiCalendar, FiUsers, FiBarChart2, FiSettings, FiLogOut, FiMoon, FiSun, FiAward, FiShoppingBag, FiArrowLeft } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabaseClient' // Import supabase to check admin status
 
@@ -63,6 +63,7 @@ export default function AdminLayout({
   }
 
   const navigation = [
+    { name: 'Back to App', href: '/dashboard', icon: FiArrowLeft },
     { name: 'Dashboard', href: '/admin/dashboard', icon: FiHome },
     { name: 'Challenges', href: '/admin/challenges', icon: FiCalendar },
     { name: 'Manage Shop', href: '/admin/shop', icon: FiShoppingBag },
