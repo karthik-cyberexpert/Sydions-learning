@@ -1,16 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { User } from '@supabase/supabase-js'
-import ConversationList from '@/components/messages/ConversationList'
+import ConversationList, { Conversation } from '@/components/messages/ConversationList'
 import ChatWindow from '@/components/messages/ChatWindow'
-
-// A basic type for a conversation
-interface Conversation {
-  id: string;
-  // other properties can be added here, e.g., participant names
-}
 
 export default function MessagesPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -18,34 +12,35 @@ export default function MessagesPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+  const fetchInitialData = useCallback(async () => {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
 
-      if (user) {
-        // This is a placeholder for fetching user-specific conversations.
-        // The actual query will depend on the database schema.
-        const { data: convosData, error } = await supabase
-          .from('conversations')
-          .select('id')
-        
-        if (error) {
-          console.error('Error fetching conversations:', error)
-        } else {
-          setConversations(convosData as Conversation[] || [])
-          // Optionally, select the first conversation by default
-          if (convosData && convosData.length > 0 && !selectedConversationId) {
-            setSelectedConversationId(convosData[0].id);
-          }
+    if (user) {
+      // For complex queries like fetching conversations with participants and last messages,
+      // it's often best to use a database function (RPC).
+      // This assumes a function `get_user_conversations` exists in your Supabase SQL editor.
+      const { data: convosData, error } = await supabase.rpc('get_user_conversations')
+
+      if (error) {
+        console.error('Error fetching conversations:', error)
+        setConversations([])
+      } else {
+        const fetchedConversations = convosData as Conversation[] || [];
+        setConversations(fetchedConversations)
+        // Select the first conversation by default if none is selected
+        if (fetchedConversations.length > 0 && !selectedConversationId) {
+          setSelectedConversationId(fetchedConversations[0].id);
         }
       }
-      setLoading(false)
     }
+    setLoading(false)
+  }, [selectedConversationId]) // Dependency array is correct now
 
+  useEffect(() => {
     fetchInitialData()
-  }, [])
+  }, [fetchInitialData])
 
   if (loading) {
     return (
