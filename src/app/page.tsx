@@ -39,7 +39,7 @@ export default function LandingPage() {
                   transition={{ duration: 0.5 }}
                   className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl"
                 >
-                  <span className="block">Level Up Your</span>
+                  <span className="block">Sydions - Learning</span>
                   <span className="block text-indigo-600 dark:text-indigo-400">Development Skills</span>
                 </motion.h1>
                 <motion.p 
@@ -151,7 +151,7 @@ export default function LandingPage() {
                 <div className="ml-16">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">Gamification System</h3>
                   <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-                    Earn XP, coins, and ranks as you complete challenges and submit projects. Climb the leaderboard!
+                    Earn XP, coins, and ranks as you complete challenges and submit projects. Climb the leaderboard.
                   </p>
                 </div>
               </div>

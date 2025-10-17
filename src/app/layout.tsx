@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dyad Dev Challenges",
+  title: "Sydions - Learning",
   description: "A platform for developer challenges, projects, and community",
 };
 
