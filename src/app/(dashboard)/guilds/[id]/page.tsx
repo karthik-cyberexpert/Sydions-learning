@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
-import { FiUsers, FiStar, FiUser, FiCalendar, FiAlertCircle, FiLogIn, FiLogOut, FiCrown } from 'react-icons/fi'
+import { FiUsers, FiStar, FiUser, FiCalendar, FiAlertCircle, FiLogIn, FiLogOut, FiAward } from 'react-icons/fi'
 import Link from 'next/link'
 import ChatPanel from '@/components/ChatPanel'
 
@@ -291,7 +291,7 @@ export default function GuildDetail() {
                     <div>
                       {guild.owner_id === member.id && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                          <FiCrown className="mr-1 -ml-0.5 h-4 w-4" />
+                          <FiAward className="mr-1 -ml-0.5 h-4 w-4" />
                           Leader
                         </span>
                       )}
