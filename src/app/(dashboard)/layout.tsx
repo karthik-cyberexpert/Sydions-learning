@@ -19,37 +19,42 @@ export default function DashboardLayout({
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [userGuildId, setUserGuildId] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const checkAdminAndGuildStatus = async () => {
       if (!user) {
         setIsAdmin(false)
+        setUserGuildId(null)
         return
       }
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('is_admin')
+          .select('is_admin, guild_id')
           .eq('id', user.id)
           .single()
         
         if (error) {
-          console.error('Error checking admin status:', error.message)
+          console.error('Error checking user status:', error.message)
           setIsAdmin(false)
+          setUserGuildId(null)
           return
         }
         
         setIsAdmin(profile?.is_admin || false)
+        setUserGuildId(profile?.guild_id || null)
       } catch (error) {
-        console.error('Error checking admin status:', error)
+        console.error('Error checking user status:', error)
         setIsAdmin(false)
+        setUserGuildId(null)
       }
     }
-    checkAdminStatus()
+    checkAdminAndGuildStatus()
   }, [user])
 
   const handleSignOut = async () => {
@@ -61,6 +66,8 @@ export default function DashboardLayout({
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
+  const guildHref = userGuildId ? `/guilds/${userGuildId}` : '/guilds';
+
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome },
     { name: 'Challenges', href: '/challenges', icon: FiCalendar },
@@ -70,7 +77,7 @@ export default function DashboardLayout({
     { name: 'Profile', href: '/profile', icon: FiUser },
     { name: 'Friends', href: '/friends', icon: FiUserPlus },
     { name: 'Users', href: '/users', icon: FiUsers },
-    { name: 'Guilds', href: '/guilds', icon: FiShield },
+    { name: 'Guilds', href: guildHref, icon: FiShield },
     { name: 'Leaderboard', href: '/leaderboard', icon: FiAward },
     { name: 'Settings', href: '/settings', icon: FiSettings },
   ]
