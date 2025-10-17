@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import { FiHome, FiCalendar, FiUsers, FiBarChart2, FiSettings, FiLogOut, FiMoon, FiSun, FiAward, FiShoppingBag, FiArrowLeft } from 'react-icons/fi'
+import { FiHome, FiCalendar, FiUsers, FiBarChart2, FiSettings, FiLogOut, FiMoon, FiSun, FiAward, FiShoppingBag, FiArrowLeft, FiShield } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabaseClient' // Import supabase to check admin status
 
@@ -68,6 +68,7 @@ export default function AdminLayout({
     { name: 'Challenges', href: '/admin/challenges', icon: FiCalendar },
     { name: 'Manage Shop', href: '/admin/shop', icon: FiShoppingBag },
     { name: 'Manage Levels', href: '/admin/levels', icon: FiAward },
+    { name: 'Manage Guild Levels', href: '/admin/guild-levels', icon: FiShield },
     { name: 'Users', href: '/admin/users', icon: FiUsers },
     { name: 'Reports', href: '/admin/reports', icon: FiBarChart2 },
     { name: 'Settings', href: '/admin/settings', icon: FiSettings },
@@ -75,7 +76,7 @@ export default function AdminLayout({
 
   if (!isAdmin) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     )
