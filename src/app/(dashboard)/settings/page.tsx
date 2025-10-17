@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { FiUser, FiLock, FiSun, FiMoon } from 'react-icons/fi'
+import { FiUser, FiLock, FiSun, FiMoon, FiCheckCircle, FiXCircle } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
 
 export default function SettingsPage() {
@@ -14,15 +14,61 @@ export default function SettingsPage() {
   
   // Profile state
   const [profileForm, setProfileForm] = useState({ username: '', full_name: '' })
+  const [originalUsername, setOriginalUsername] = useState('')
   const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null)
+  const [checkLoading, setCheckLoading] = useState(false)
 
   // Password state
   const [passwordForm, setPasswordForm] = useState({ new_password: '', confirm_password: '' })
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [isPasswordSaving, setIsPasswordSaving] = useState(false)
 
-  useEffect(() => { /* isMounted logic removed */ }, [])
+  const checkAvailability = useCallback(async (name: string) => {
+    if (name === originalUsername) {
+      setIsUsernameAvailable(true)
+      return
+    }
+    if (name.length < 3) {
+      setIsUsernameAvailable(null)
+      return
+    }
+    
+    setCheckLoading(true)
+    
+    try {
+      const { data, error } = await supabase.rpc('check_username_availability', {
+        p_username: name,
+        p_user_id: user?.id || '00000000-0000-0000-0000-000000000000'
+      })
+      
+      if (error) throw error
+      
+      setIsUsernameAvailable(data)
+    } catch (err: unknown) {
+      console.error('Error checking username:', err)
+      setIsUsernameAvailable(false)
+    } finally {
+      setCheckLoading(false)
+    }
+  }, [user?.id, originalUsername])
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (profileForm.username && profileForm.username !== originalUsername) {
+        checkAvailability(profileForm.username)
+      } else if (profileForm.username === originalUsername) {
+        setIsUsernameAvailable(true)
+      } else {
+        setIsUsernameAvailable(null)
+      }
+    }, 500)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [profileForm.username, originalUsername, checkAvailability])
 
   const fetchProfile = useCallback(async () => {
     if (!user) return
@@ -40,6 +86,8 @@ export default function SettingsPage() {
         username: data.username || '',
         full_name: data.full_name || '',
       })
+      setOriginalUsername(data.username || '')
+      setIsUsernameAvailable(true) // Assume current username is valid
     } catch (err: unknown) {
       setProfileStatus({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred.' })
     } finally {
@@ -59,6 +107,9 @@ export default function SettingsPage() {
     setProfileStatus(null)
 
     try {
+      if (profileForm.username.length < 3) throw new Error('Username must be at least 3 characters.')
+      if (profileForm.username !== originalUsername && isUsernameAvailable !== true) throw new Error('Please choose an available username.')
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -70,6 +121,7 @@ export default function SettingsPage() {
       
       if (error) throw error
       setProfileStatus({ type: 'success', message: 'Profile updated successfully!' })
+      setOriginalUsername(profileForm.username) // Update original username after successful save
     } catch (err: unknown) {
       setProfileStatus({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred.' })
     } finally {
@@ -156,7 +208,29 @@ export default function SettingsPage() {
                   <div className="mt-6 space-y-6">
                     <div>
                       <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-                      <input type="text" name="username" id="username" required value={profileForm.username} onChange={(e) => setProfileForm({...profileForm, username: e.target.value})} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                      <div className="mt-1 relative">
+                        <input 
+                          type="text" 
+                          name="username" 
+                          id="username" 
+                          required 
+                          value={profileForm.username} 
+                          onChange={(e) => setProfileForm({...profileForm, username: e.target.value})} 
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white pr-10" 
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          {checkLoading ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                          ) : isUsernameAvailable === true ? (
+                            <FiCheckCircle className="h-5 w-5 text-green-500" />
+                          ) : isUsernameAvailable === false ? (
+                            <FiXCircle className="h-5 w-5 text-red-500" />
+                          ) : null}
+                        </div>
+                      </div>
+                      {isUsernameAvailable === false && profileForm.username.length >= 3 && (
+                        <p className="mt-2 text-sm text-red-500">This username is already taken.</p>
+                      )}
                     </div>
                     <div>
                       <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
@@ -170,7 +244,11 @@ export default function SettingsPage() {
                       {profileStatus.message}
                     </div>
                   )}
-                  <button type="submit" disabled={isProfileSaving} className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+                  <button 
+                    type="submit" 
+                    disabled={isProfileSaving || isUsernameAvailable === false || checkLoading} 
+                    className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                  >
                     {isProfileSaving ? 'Saving...' : 'Save'}
                   </button>
                 </div>

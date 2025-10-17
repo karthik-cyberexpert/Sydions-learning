@@ -11,16 +11,16 @@ export default function ProtectedRoute({
   children: React.ReactNode,
   requireAuth?: boolean
 }) {
-  const { user, loading } = useAuth()
+  const { user, loading, profileLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && requireAuth && !user) {
+    if (!loading && !profileLoading && requireAuth && !user) {
       router.push('/sign-in')
     }
-  }, [user, loading, router, requireAuth])
+  }, [user, loading, profileLoading, router, requireAuth])
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
