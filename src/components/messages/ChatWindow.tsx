@@ -7,9 +7,10 @@ import MessageItem from './MessageItem'
 import MessageInput from './MessageInput'
 
 interface ProfileData {
-  username: string
-  avatar_url: string
-  full_name: string // Added full_name
+  username: string | null
+  avatar_url: string | null
+  full_name: string | null
+  email_fallback?: string // Added email fallback field
 }
 
 export interface Message {
@@ -36,9 +37,39 @@ interface ChatWindowProps {
   conversationId: string
 }
 
+// Helper function to fetch email if profile is missing data
+const fetchEmailFallback = async (userId: string): Promise<string | undefined> => {
+  const { data: authUser, error } = await supabase.auth.admin.getUserById(userId);
+  if (error) {
+    console.error('Error fetching auth user for email fallback:', error);
+    return undefined;
+  }
+  return authUser?.user.email;
+}
+
 export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const transformAndSetMessages = useCallback(async (rawMessages: RawMessageData[]) => {
+    const transformedMessages: Message[] = await Promise.all(
+      (rawMessages || []).map(async (msg) => {
+        const profile = msg.profiles?.[0] || { username: null, avatar_url: null, full_name: null };
+        
+        // Check if we need a fallback name (username or full_name is missing)
+        if (!profile.username && !profile.full_name) {
+          const email = await fetchEmailFallback(msg.user_id);
+          profile.email_fallback = email?.split('@')[0] || 'Unknown User';
+        }
+
+        return {
+          ...msg,
+          profiles: profile
+        };
+      })
+    );
+    setMessages(transformedMessages);
+  }, [])
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -61,16 +92,11 @@ export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
 
       if (error) throw error;
 
-      const transformedMessages = (data as RawMessageData[] || []).map(msg => ({
-        ...msg,
-        profiles: msg.profiles?.[0] || { username: 'Unknown User', avatar_url: '', full_name: '' }
-      }));
-
-      setMessages(transformedMessages);
+      await transformAndSetMessages(data as RawMessageData[]);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
-  }, [conversationId])
+  }, [conversationId, transformAndSetMessages])
 
   const fetchMessageWithProfile = useCallback(async (messageId: string) => {
     try {
@@ -93,9 +119,18 @@ export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
 
       if (error) throw error;
 
+      const rawMessage: RawMessageData = data as RawMessageData;
+      const profile = rawMessage.profiles?.[0] || { username: null, avatar_url: null, full_name: null };
+
+      // Check if we need a fallback name
+      if (!profile.username && !profile.full_name) {
+        const email = await fetchEmailFallback(rawMessage.user_id);
+        profile.email_fallback = email?.split('@')[0] || 'Unknown User';
+      }
+
       const newMessage: Message = {
-        ...(data as RawMessageData),
-        profiles: (data as RawMessageData).profiles?.[0] || { username: 'Unknown User', avatar_url: '', full_name: '' }
+        ...rawMessage,
+        profiles: profile
       };
 
       setMessages((prevMessages) => [...prevMessages, newMessage]);

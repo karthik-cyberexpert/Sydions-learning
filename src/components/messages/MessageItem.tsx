@@ -17,8 +17,8 @@ export default function MessageItem({ message, isCurrentUser }: MessageItemProps
   // Safely access profile data, falling back to empty strings if the profile object itself is incomplete
   const profile = message.profiles || {};
   
-  // Prioritize username, then full_name, then fall back to 'Unknown User'
-  const senderName = profile.username || profile.full_name || 'Unknown User';
+  // Prioritize username, then full_name, then email_fallback, then fall back to 'Unknown User'
+  const senderName = profile.username || profile.full_name || profile.email_fallback || 'Unknown User';
   const senderInitial = senderName.charAt(0).toUpperCase();
 
   return (

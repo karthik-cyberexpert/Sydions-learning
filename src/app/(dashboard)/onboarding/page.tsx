@@ -120,7 +120,7 @@ export default function OnboardingPage() {
             Welcome to Sydions!
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Let's set up your unique username to get started.
+            Let&apos;s set up your unique username to get started.
           </p>
         </div>
         
