@@ -14,13 +14,13 @@ type ProfileData = {
 export default function SettingsPage() {
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
+  const [isMounted, setIsMounted] = useState(false) // Renamed to avoid conflict
+  
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(true)
   
   // Profile state
-  const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [profileData, setProfileData] = useState<ProfileData | null>(null) // Renamed to avoid conflict
   const [profileForm, setProfileForm] = useState({ username: '', full_name: '' })
   const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [isPasswordSaving, setIsPasswordSaving] = useState(false)
 
-  useEffect(() => setMounted(true), [])
+  useEffect(() => setIsMounted(true), [])
 
   const fetchProfile = useCallback(async () => {
     if (!user) return
@@ -44,13 +44,13 @@ export default function SettingsPage() {
       
       if (error) throw error
       
-      setProfile(data)
+      setProfileData(data as ProfileData)
       setProfileForm({
         username: data.username || '',
         full_name: data.full_name || '',
       })
-    } catch (err: any) {
-      setProfileStatus({ type: 'error', message: err.message })
+    } catch (err: unknown) {
+      setProfileStatus({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred.' })
     } finally {
       setLoading(false)
     }
@@ -79,8 +79,8 @@ export default function SettingsPage() {
       
       if (error) throw error
       setProfileStatus({ type: 'success', message: 'Profile updated successfully!' })
-    } catch (err: any) {
-      setProfileStatus({ type: 'error', message: err.message })
+    } catch (err: unknown) {
+      setProfileStatus({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred.' })
     } finally {
       setIsProfileSaving(false)
     }
@@ -107,8 +107,8 @@ export default function SettingsPage() {
       if (error) throw error
       setPasswordStatus({ type: 'success', message: 'Password updated successfully!' })
       setPasswordForm({ new_password: '', confirm_password: '' })
-    } catch (err: any) {
-      setPasswordStatus({ type: 'error', message: err.message })
+    } catch (err: unknown) {
+      setPasswordStatus({ type: 'error', message: err instanceof Error ? err.message : 'An unknown error occurred.' })
     } finally {
       setIsPasswordSaving(false)
     }

@@ -34,9 +34,9 @@ export default function AdminChallenges() {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      setChallenges(data || [])
-    } catch (err: any) {
-      setError(err.message)
+      setChallenges(data as Challenge[] || [])
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -52,9 +52,9 @@ export default function AdminChallenges() {
         .eq('id', challengeId)
       
       if (error) throw error
-      fetchChallenges()
-    } catch (err: any) {
-      setError(err.message)
+      fetchChallenges() // Refresh the list
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     }
   }
 

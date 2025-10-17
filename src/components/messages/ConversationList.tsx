@@ -64,7 +64,7 @@ export default function ConversationList({ selectedConversationId, onSelectConve
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
+        () => { // Removed unused payload
           fetchConversations();
         }
       )
@@ -90,7 +90,7 @@ export default function ConversationList({ selectedConversationId, onSelectConve
         if (error) {
           console.error('Error searching users:', error)
         } else {
-          setSearchResults(data || [])
+          setSearchResults(data as SearchResult[] || [])
         }
       }
       const timer = setTimeout(() => handleSearch(), 300)

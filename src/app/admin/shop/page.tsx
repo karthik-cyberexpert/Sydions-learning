@@ -16,7 +16,7 @@ interface ShopItem {
   is_for_guild: boolean
 }
 
-const ITEM_TYPES = ['avatar', 'banner', 'badge']
+const ITEM_TYPES: ('avatar' | 'banner' | 'badge')[] = ['avatar', 'banner', 'badge']
 
 export default function AdminShop() {
   const [items, setItems] = useState<ShopItem[]>([])
@@ -49,9 +49,9 @@ export default function AdminShop() {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      setItems(data || [])
-    } catch (err: any) {
-      setError(err.message)
+      setItems(data as ShopItem[] || [])
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -108,8 +108,8 @@ export default function AdminShop() {
       
       setIsModalOpen(false)
       fetchItems()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     }
   }
 
@@ -120,8 +120,8 @@ export default function AdminShop() {
       const { error } = await supabase.from('shop_items').delete().eq('id', itemId)
       if (error) throw error
       fetchItems()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     }
   }
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { FiAlertCircle, FiCheckCircle, FiExternalLink, FiThumbsUp } from 'react-icons/fi'
 import Link from 'next/link'
 
@@ -17,6 +17,7 @@ interface Submission {
   id: string
   live_url: string
   description: string
+  user_id: string
   profiles: {
     username: string
   } | null
@@ -25,7 +26,6 @@ interface Submission {
 export default function VotePage() {
   const { user } = useAuth()
   const { id: challengeId } = useParams()
-  const router = useRouter()
 
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -43,7 +43,7 @@ export default function VotePage() {
       const { data: challengeData, error: challengeError } = await supabase.from('challenges').select('id, title, status').eq('id', challengeId).single()
       if (challengeError) throw new Error('Challenge not found.')
       if (challengeData.status !== 'Voting') throw new Error('This challenge is not in the voting phase.')
-      setChallenge(challengeData)
+      setChallenge(challengeData as Challenge)
 
       const { data: submissionsData, error: submissionsError } = await supabase.from('submissions').select(`id, live_url, description, user_id`).eq('challenge_id', challengeId)
       if (submissionsError) throw submissionsError
@@ -53,8 +53,11 @@ export default function VotePage() {
         const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('id, username').in('id', userIds)
         if (profilesError) throw profilesError
         const profilesMap = new Map(profilesData.map(p => [p.id, p]))
-        const transformedSubmissions = submissionsData.map(submission => ({ ...submission, profiles: profilesMap.get(submission.user_id) || null }))
-        setSubmissions(transformedSubmissions as any)
+        const transformedSubmissions: Submission[] = submissionsData.map(submission => ({ 
+          ...submission, 
+          profiles: profilesMap.get(submission.user_id) || null 
+        }))
+        setSubmissions(transformedSubmissions)
       } else {
         setSubmissions([])
       }
@@ -63,8 +66,8 @@ export default function VotePage() {
       if (voteError && voteError.code !== 'PGRST116') throw voteError
       if (voteData) setUserVote(voteData.submission_id)
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -82,8 +85,8 @@ export default function VotePage() {
       const { error } = await supabase.from('votes').insert({ user_id: user.id, challenge_id: challengeId as string, submission_id: submissionId, rating: rating })
       if (error) throw error
       setUserVote(submissionId)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setIsSubmitting(false)
     }

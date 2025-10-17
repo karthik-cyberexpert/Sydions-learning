@@ -98,7 +98,7 @@ export default function Dashboard() {
           Welcome back, {user?.email?.split('@')[0] || 'Developer'}!
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Here's what's happening with your challenges today.
+          Here&apos;s what&apos;s happening with your challenges today.
         </p>
       </div>
 

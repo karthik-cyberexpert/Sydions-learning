@@ -137,7 +137,7 @@ export default function LandingPage() {
                   <FiUsers className="h-6 w-6" />
                 </div>
                 <div className="ml-16">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Community & Collaboration</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Community &amp; Collaboration</h3>
                   <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
                     Join or create guilds and temporary teams to collaborate on projects with other developers.
                   </p>
@@ -163,7 +163,7 @@ export default function LandingPage() {
                 <div className="ml-16">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">Real-time Feedback</h3>
                   <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-                    Vote on other developers' projects and receive feedback from the community during voting phases.
+                    Vote on other developers&apos; projects and receive feedback from the community during voting phases.
                   </p>
                 </div>
               </div>

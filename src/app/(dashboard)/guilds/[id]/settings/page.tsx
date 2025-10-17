@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
-import { FiAlertCircle, FiSave, FiCheckCircle, FiTrash2, FiUser, FiPackage } from 'react-icons/fi'
+import { FiAlertCircle, FiSave, FiCheckCircle, FiTrash2, FiPackage } from 'react-icons/fi'
 
 interface Guild {
   id: string
@@ -16,14 +16,16 @@ interface Guild {
   is_public: boolean
 }
 
+interface ShopItemDetails {
+  name: string
+  image_url: string | null
+  item_type: 'avatar' | 'banner'
+}
+
 interface GuildInventoryItem {
   id: string
   item_id: string
-  shop_items: {
-    name: string
-    image_url: string | null
-    item_type: 'avatar' | 'banner'
-  }
+  shop_items: ShopItemDetails
 }
 
 export default function GuildSettings() {
@@ -46,15 +48,15 @@ export default function GuildSettings() {
       const { data, error } = await supabase.from('guilds').select('*').eq('id', id).single()
       if (error) throw error
       if (data.owner_id !== user.id) throw new Error('You do not have permission to edit this guild.')
-      setGuild(data)
+      setGuild(data as Guild)
       setFormData({ description: data.description || '', is_public: data.is_public })
 
       const { data: invData, error: invError } = await supabase.from('guild_inventory').select(`id, item_id, shop_items (name, image_url, item_type)`).eq('guild_id', id)
       if (invError) throw invError
-      setInventory(invData as any)
+      setInventory(invData as GuildInventoryItem[])
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
       setTimeout(() => router.push(`/guilds/${id}`), 3000)
     } finally {
       setLoading(false)
@@ -77,8 +79,8 @@ export default function GuildSettings() {
       if (error) throw error
       setSuccess('Guild settings saved successfully!')
       setTimeout(() => setSuccess(null), 3000)
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.')
     } finally {
       setSaving(false)
     }
@@ -92,8 +94,8 @@ export default function GuildSettings() {
       if (error) throw error
       setGuild(prev => prev ? { ...prev, ...payload } : null)
       setSuccess(`${item.shop_items.item_type} updated!`)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setSaving(false)
     }
@@ -107,18 +109,18 @@ export default function GuildSettings() {
       const { error } = await supabase.from('guilds').delete().eq('id', guild.id)
       if (error) throw error
       router.push('/guilds')
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
       setSaving(false)
     }
   }
 
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>
-  if (!guild) return <div className="text-center py-12"><FiAlertCircle className="mx-auto h-12 w-12 text-gray-400" /><h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Guild not found or you don't have permission.</h3></div>
+  if (!guild) return <div className="text-center py-12"><FiAlertCircle className="mx-auto h-12 w-12 text-gray-400" /><h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Guild not found or you don&apos;t have permission.</h3></div>
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div><h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Guild Settings for &quot;{guild.name}&quot;</h1><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage your guild's information and settings.</p></div>
+      <div><h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Guild Settings for &quot;{guild.name}&quot;</h1><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage your guild&apos;s information and settings.</p></div>
       
       {error && <div className="mb-4 rounded-md bg-red-50 p-4"><div className="flex"><div className="flex-shrink-0"><FiAlertCircle className="h-5 w-5 text-red-400" /></div><div className="ml-3"><h3 className="text-sm font-medium text-red-800">{error}</h3></div></div></div>}
       {success && <div className="mb-4 rounded-md bg-green-50 p-4"><div className="flex"><div className="flex-shrink-0"><FiCheckCircle className="h-5 w-5 text-green-400" /></div><div className="ml-3"><h3 className="text-sm font-medium text-green-800">{success}</h3></div></div></div>}

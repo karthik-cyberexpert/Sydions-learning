@@ -10,6 +10,13 @@ interface Friend {
   username: string
 }
 
+interface FriendRequestResponse {
+  sender: Friend
+  receiver: Friend
+  sender_id: string
+  receiver_id: string
+}
+
 interface CreateGroupModalProps {
   isOpen: boolean
   onClose: () => void
@@ -30,7 +37,7 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }: Cr
     const fetchFriends = async () => {
       const { data, error } = await supabase
         .from('friend_requests')
-        .select('sender:sender_id(id, username), receiver:receiver_id(id, username)')
+        .select('sender:sender_id(id, username), receiver:receiver_id(id, username), sender_id, receiver_id')
         .eq('status', 'accepted')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
 
@@ -39,7 +46,7 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }: Cr
         return
       }
 
-      const friendProfiles = data.map(r => (r.sender.id === user.id ? r.receiver : r.sender))
+      const friendProfiles = (data as FriendRequestResponse[]).map(r => (r.sender_id === user.id ? r.receiver : r.sender))
       setFriends(friendProfiles)
     }
 
@@ -75,8 +82,8 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }: Cr
       if (rpcError) throw rpcError
 
       onGroupCreated(conversationId)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }

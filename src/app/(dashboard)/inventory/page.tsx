@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { motion } from 'framer-motion'
 import { FiUser, FiAward, FiPackage, FiAlertCircle, FiShield } from 'react-icons/fi'
 
 interface ShopItemDetails {
@@ -55,7 +54,7 @@ export default function InventoryPage() {
         .single()
       
       if (profileError) throw profileError
-      setProfile(profileData)
+      setProfile(profileData as Profile)
 
       // 1. Fetch Personal Inventory
       const { data: userInvData, error: userInvError } = await supabase
@@ -69,7 +68,7 @@ export default function InventoryPage() {
         .eq('user_id', user.id)
       
       if (userInvError) throw userInvError
-      setPersonalInventory(userInvData as any)
+      setPersonalInventory(userInvData as InventoryItem[])
 
       // 2. Fetch Guild Inventory (if member of a guild)
       if (profileData.guild_id) {
@@ -84,14 +83,14 @@ export default function InventoryPage() {
           .eq('guild_id', profileData.guild_id)
         
         if (guildInvError) throw guildInvError
-        setGuildInventory(guildInvData as any)
+        setGuildInventory(guildInvData as GuildInventoryItem[])
       } else {
         setGuildInventory([])
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching inventory:', err)
-      setError(err.message)
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -106,9 +105,6 @@ export default function InventoryPage() {
     setUpdating(true)
     setError(null)
     
-    let updatePayload: any = {}
-    let successMessage = ''
-    const table = isGuildItem ? 'guilds' : 'profiles'
     const idToUpdate = isGuildItem ? profile?.guild_id : user.id
 
     if (!idToUpdate) {
@@ -116,6 +112,10 @@ export default function InventoryPage() {
       setError('Cannot equip item: Missing ID.')
       return
     }
+
+    let updatePayload: { [key: string]: string | null } = {}
+    let successMessage = ''
+    const table = isGuildItem ? 'guilds' : 'profiles'
 
     if (item.shop_items.item_type === 'avatar') {
       updatePayload.equipped_avatar_id = item.item_id
@@ -142,8 +142,8 @@ export default function InventoryPage() {
         setProfile(prev => prev ? ({ ...prev, ...updatePayload }) : null)
       }
       alert(successMessage) // Using alert for simplicity, replace with toast later
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setUpdating(false)
     }

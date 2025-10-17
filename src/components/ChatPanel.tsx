@@ -5,15 +5,17 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { FiSend } from 'react-icons/fi'
 
+interface ProfileData {
+  username: string
+  avatar_url: string | null
+}
+
 interface Message {
   id: string
   content: string
   created_at: string
   user_id: string
-  profiles: {
-    username: string
-    avatar_url: string | null
-  }
+  profiles: ProfileData
 }
 
 interface ChatPanelProps {
@@ -40,7 +42,7 @@ export default function ChatPanel({ guildId }: ChatPanelProps) {
       if (error) {
         console.error('Error fetching messages:', error)
       } else {
-        setMessages(data as any)
+        setMessages(data as Message[])
       }
       setLoading(false)
     }
@@ -68,7 +70,7 @@ export default function ChatPanel({ guildId }: ChatPanelProps) {
             .single()
           
           if (!error && data) {
-            const fullMessage = { ...payload.new, profiles: data } as Message
+            const fullMessage: Message = { ...payload.new, profiles: data } as Message
             setMessages((prevMessages) => [...prevMessages, fullMessage])
           }
         }

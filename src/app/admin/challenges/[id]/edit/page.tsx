@@ -11,6 +11,18 @@ interface Guild {
   name: string
 }
 
+interface ChallengeFormData {
+  title: string
+  description: string
+  type: string
+  difficulty: string
+  deadline: string
+  max_points: number
+  max_team_size: number
+  status: string
+  guild_id: string | null
+}
+
 export default function EditChallenge() {
   const { user } = useAuth()
   const router = useRouter()
@@ -19,7 +31,7 @@ export default function EditChallenge() {
   const [error, setError] = useState<string | null>(null)
   const [guilds, setGuilds] = useState<Guild[]>([])
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ChallengeFormData>({
     title: '',
     description: '',
     type: 'solo',
@@ -28,7 +40,7 @@ export default function EditChallenge() {
     max_points: 100,
     max_team_size: 3,
     status: 'Upcoming',
-    guild_id: '' as string | null,
+    guild_id: null,
   })
 
   useEffect(() => {
@@ -59,7 +71,7 @@ export default function EditChallenge() {
           .order('name')
 
         if (guildsError) throw guildsError
-        setGuilds(guildsData || [])
+        setGuilds(guildsData as Guild[] || [])
 
         setFormData({
           title: data.title,
@@ -72,8 +84,8 @@ export default function EditChallenge() {
           status: data.status,
           guild_id: data.guild_id,
         })
-      } catch (err: any) {
-        setError(err.message)
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred.')
         setTimeout(() => router.push('/admin/challenges'), 3000)
       } finally {
         setLoading(false)
@@ -116,8 +128,8 @@ export default function EditChallenge() {
       if (error) throw error
       
       router.push('/admin/challenges')
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }

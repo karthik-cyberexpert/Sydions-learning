@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { FiCalendar, FiClock, FiUsers, FiUser, FiShield, FiStar, FiAlertCircle } from 'react-icons/fi'
 import Link from 'next/link'
 
@@ -38,13 +38,12 @@ interface Submission {
 
 export default function ChallengeDetail() {
   const { user } = useAuth()
-  const router = useRouter()
   const { id } = useParams()
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userSubmission, setUserSubmission] = useState<any>(null)
+  const [userSubmission, setUserSubmission] = useState<any>(null) // Keeping 'any' here for simplicity of the submission object structure
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -59,7 +58,7 @@ export default function ChallengeDetail() {
           .single()
         
         if (challengeError) throw challengeError
-        setChallenge(challengeData)
+        setChallenge(challengeData as Challenge)
         
         // Fetch submissions for this challenge
         const { data: submissionsData, error: submissionsError } = await supabase
@@ -110,8 +109,8 @@ export default function ChallengeDetail() {
             setUserSubmission(userSubmissionData)
           }
         }
-      } catch (error: any) {
-        setError(error.message)
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : 'An unknown error occurred.')
       } finally {
         setLoading(false)
       }
@@ -195,7 +194,7 @@ export default function ChallengeDetail() {
         <FiAlertCircle className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Challenge not found</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          The challenge you're looking for doesn't exist or has been removed.
+          The challenge you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <div className="mt-6">
           <Link

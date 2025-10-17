@@ -60,11 +60,11 @@ export default function Profile() {
         rankName = rankData?.rank_name || 'Rookie'
       }
       
-      setProfile({ ...profileData, rank: rankName })
+      setProfile({ ...profileData, rank: rankName } as Profile)
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching profile:', err)
-      setError(err.message)
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }

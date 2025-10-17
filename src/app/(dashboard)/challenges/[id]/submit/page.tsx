@@ -40,9 +40,9 @@ export default function SubmitProject() {
           .single()
         
         if (error) throw error
-        setChallenge(data)
-      } catch (error: any) {
-        setError(error.message)
+        setChallenge(data as Challenge)
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : 'An unknown error occurred.')
       } finally {
         setLoading(false)
       }
@@ -73,7 +73,7 @@ export default function SubmitProject() {
       }
       
       // Insert the submission
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('submissions')
         .insert([
           {
@@ -93,8 +93,8 @@ export default function SubmitProject() {
       setTimeout(() => {
         router.push(`/challenges/${id}`)
       }, 2000)
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.')
     } finally {
       setSubmitting(false)
     }
@@ -132,7 +132,7 @@ export default function SubmitProject() {
         <FiAlertCircle className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Challenge not found</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          The challenge you're trying to submit to doesn't exist.
+          The challenge you&apos;re trying to submit to doesn&apos;t exist.
         </p>
         <div className="mt-6">
           <button

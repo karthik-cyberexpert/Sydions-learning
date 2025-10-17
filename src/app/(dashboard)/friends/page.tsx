@@ -19,6 +19,8 @@ type FriendRequestWithProfiles = {
   status: 'pending' | 'accepted' | 'declined'
   sender: Profile
   receiver: Profile
+  sender_id: string
+  receiver_id: string
 }
 
 export default function FriendsPage() {
@@ -40,15 +42,17 @@ export default function FriendsPage() {
 
       if (error) throw error
 
-      const incomingReqs = data.filter(r => r.receiver_id === user.id && r.status === 'pending')
-      const sentReqs = data.filter(r => r.sender_id === user.id && r.status === 'pending')
-      const acceptedReqs = data.filter(r => r.status === 'accepted')
+      const allRequests = data as FriendRequestWithProfiles[]
 
-      setIncoming(incomingReqs as any)
-      setSent(sentReqs as any)
+      const incomingReqs = allRequests.filter(r => r.receiver_id === user.id && r.status === 'pending')
+      const sentReqs = allRequests.filter(r => r.sender_id === user.id && r.status === 'pending')
+      const acceptedReqs = allRequests.filter(r => r.status === 'accepted')
+
+      setIncoming(incomingReqs)
+      setSent(sentReqs)
       
       const friendProfiles = acceptedReqs.map(r => r.sender_id === user.id ? r.receiver : r.sender)
-      setFriends(friendProfiles as any)
+      setFriends(friendProfiles)
 
     } catch (err) {
       console.error("Error fetching friends data:", err)

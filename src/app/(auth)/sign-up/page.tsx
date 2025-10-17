@@ -28,8 +28,8 @@ export default function SignUp() {
     try {
       await signUpWithEmail(email, password)
       router.push('/dashboard')
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }

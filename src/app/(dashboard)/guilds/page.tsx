@@ -17,6 +17,16 @@ interface Guild {
   created_at: string
 }
 
+interface GuildLeaderboardRow {
+  id: string
+  name: string
+  description: string
+  owner_id: string
+  total_xp: number | null
+  member_count: number | null
+  created_at: string
+}
+
 export default function Guilds() {
   const { user } = useAuth()
   const [guilds, setGuilds] = useState<Guild[]>([])
@@ -35,7 +45,7 @@ export default function Guilds() {
 
         if (guildsError) throw guildsError;
 
-        const transformedGuilds = (guildsData || []).map((guild: any) => ({
+        const transformedGuilds: Guild[] = (guildsData as GuildLeaderboardRow[] || []).map((guild) => ({
           id: guild.id,
           name: guild.name,
           description: guild.description,

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
-import { FiUsers, FiAward, FiCalendar, FiTrendingUp, FiAlertCircle } from 'react-icons/fi'
+import { FiUsers, FiAward, FiCalendar, FiTrendingUp } from 'react-icons/fi'
 import Link from 'next/link'
 
 interface Stats {

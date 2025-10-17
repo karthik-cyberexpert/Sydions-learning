@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { FiSearch, FiUserPlus, FiClock, FiCheck } from 'react-icons/fi'
@@ -30,23 +30,17 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    if (user) {
-      fetchData()
-    }
-  }, [user])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!user) return;
     setLoading(true)
     try {
-      if (!user) return;
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url')
         .neq('id', user.id)
       
       if (usersError) throw usersError
-      setUsers(usersData || [])
+      setUsers(usersData as Profile[] || [])
 
       const { data: requestsData, error: requestsError } = await supabase
         .from('friend_requests')
@@ -54,14 +48,20 @@ export default function UsersPage() {
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
       
       if (requestsError) throw requestsError
-      setRequests(requestsData || [])
+      setRequests(requestsData as FriendRequest[] || [])
 
     } catch (error) {
       console.error('Error fetching users data:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) {
+      fetchData()
+    }
+  }, [user, fetchData])
 
   const sendFriendRequest = async (receiverId: string) => {
     if (!user) return
@@ -74,7 +74,7 @@ export default function UsersPage() {
     if (error) {
       console.error('Error sending friend request:', error)
     } else if (data) {
-      setRequests(prev => [...prev, data])
+      setRequests(prev => [...prev, data as FriendRequest])
     }
   }
 

@@ -54,8 +54,8 @@ function CreateChallengeContent() {
             throw new Error('Only admins can create global challenges.');
           }
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
         setTimeout(() => router.push('/challenges'), 3000);
       } finally {
         setAuthLoading(false);
@@ -102,8 +102,8 @@ function CreateChallengeContent() {
       } else {
         router.push('/admin/challenges');
       }
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -152,6 +152,7 @@ function CreateChallengeContent() {
                 value={formData.title}
                 onChange={handleChange}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="e.g. React Masters"
               />
             </div>
           </div>
@@ -169,6 +170,7 @@ function CreateChallengeContent() {
                 value={formData.description}
                 onChange={handleChange}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="Describe your challenge requirements..."
               />
             </div>
           </div>

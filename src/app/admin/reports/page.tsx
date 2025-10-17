@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { FiUsers, FiAward, FiCalendar } from 'react-icons/fi'
+import { FiUsers, FiAward } from 'react-icons/fi'
 
 interface RecentUser {
   id: string
@@ -31,7 +31,7 @@ export default function AdminReports() {
           .order('created_at', { ascending: false })
           .limit(10)
         if (usersError) throw usersError
-        setRecentUsers(usersData as any)
+        setRecentUsers(usersData as RecentUser[] || [])
 
         // Fetch challenge engagement
         const { data: challengesData, error: challengesError } = await supabase

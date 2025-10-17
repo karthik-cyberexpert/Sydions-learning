@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
-import { FiSearch, FiFilter, FiStar, FiUser, FiUsers, FiShield } from 'react-icons/fi'
+import { FiSearch, FiStar, FiUser, FiUsers, FiShield } from 'react-icons/fi'
 
 interface Project {
   id: string
@@ -90,7 +90,7 @@ export default function Explore() {
         }))
         
         setProjects(transformedData as Project[])
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error fetching projects:', error)
       } finally {
         setLoading(false)
@@ -235,7 +235,7 @@ export default function Explore() {
           <FiSearch className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No projects found</h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Try adjusting your search or filter to find what you're looking for.
+            Try adjusting your search or filter to find what you&apos;re looking for.
           </p>
         </div>
       )}

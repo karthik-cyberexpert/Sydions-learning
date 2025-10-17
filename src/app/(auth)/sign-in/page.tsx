@@ -21,8 +21,8 @@ export default function SignIn() {
     try {
       await signInWithEmail(email, password)
       router.push('/dashboard')
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -32,8 +32,8 @@ export default function SignIn() {
     setLoading(true)
     try {
       await signInWithGoogle()
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.')
       setLoading(false)
     }
   }

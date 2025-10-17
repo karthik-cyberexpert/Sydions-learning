@@ -64,12 +64,13 @@ export default function CreateGuild() {
       
       // Redirect to the new guild page
       router.push(`/guilds/${guildData.id}`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       // The trigger might raise an exception if the user is already in a guild.
-      if (error.message.includes('User is already in a guild')) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.'
+      if (errorMessage.includes('User is already in a guild')) {
         setError('You are already in a guild. You must leave your current guild to create a new one.');
       } else {
-        setError(error.message);
+        setError(errorMessage);
       }
     } finally {
       setLoading(false)

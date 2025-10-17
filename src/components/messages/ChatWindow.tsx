@@ -5,25 +5,29 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { FiSend } from 'react-icons/fi'
 
+interface ProfileData {
+  username: string
+  avatar_url: string | null
+}
+
 interface Message {
   id: string
   content: string
   created_at: string
   user_id: string
-  profiles: {
-    username: string
-    avatar_url: string | null
-  }
+  profiles: ProfileData
+}
+
+interface ParticipantProfile {
+  id: string
+  username: string
 }
 
 interface ConversationDetails {
   name: string | null
   type: 'dm' | 'group'
   participants: {
-    profiles: {
-      id: string
-      username: string
-    }
+    profiles: ParticipantProfile
   }[]
 }
 
@@ -55,7 +59,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
       if (error) throw error;
 
-      setMessages((data as any) || []);
+      setMessages(data as Message[] || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
@@ -80,7 +84,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     if (error) {
       console.error("Error fetching conversation details", error);
     } else {
-      setConversationDetails(data as any);
+      setConversationDetails(data as ConversationDetails);
     }
   }, [conversationId, user]);
 
@@ -105,7 +109,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           table: 'messages',
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
+        () => { // Removed unused payload
           fetchMessages();
         }
       )

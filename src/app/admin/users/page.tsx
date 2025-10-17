@@ -34,9 +34,9 @@ export default function AdminUsers() {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      setUsers(data || [])
-    } catch (err: any) {
-      setError(err.message)
+      setUsers(data as Profile[] || [])
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -53,8 +53,8 @@ export default function AdminUsers() {
       
       if (error) throw error
       fetchUsers() // Refresh the list
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     }
   }
 
@@ -115,7 +115,7 @@ export default function AdminUsers() {
               key={user.id}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="px-4 py-4 sm:px-6 flex items-center justify-between"
+              className="px-4 py-4 sm:px-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</p>

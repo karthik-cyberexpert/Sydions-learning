@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { FiUsers, FiStar, FiUser, FiCalendar, FiAlertCircle, FiLogIn, FiLogOut, FiAward, FiMessageSquare, FiInfo, FiCode, FiPlus, FiGlobe, FiCheck, FiSend, FiSettings } from 'react-icons/fi'
 import Link from 'next/link'
 import ChatPanel from '@/components/ChatPanel'
@@ -80,7 +80,8 @@ export default function GuildDetail() {
         profileRes,
         globalChallengesRes,
         registrationsRes,
-        participationRequestsRes
+        participationRequestsRes,
+        memberLeaderboardRes
       ] = await Promise.all([
         supabase.from('guilds').select('id, name, description, owner_id, created_at').eq('id', id).single(),
         supabase.from('guild_leaderboard').select('total_xp').eq('id', id).single(),
@@ -89,21 +90,24 @@ export default function GuildDetail() {
         user ? supabase.from('profiles').select('guild_id, is_guildleader').eq('id', user.id).single() : Promise.resolve({ data: null, error: null }),
         supabase.from('challenges').select('id, title, difficulty, deadline').eq('type', 'guild').is('guild_id', null),
         supabase.from('guild_challenge_registrations').select('challenge_id').eq('guild_id', id),
-        supabase.from('guild_participation_requests').select('challenge_id, user_id, profiles(username)').eq('guild_id', id)
+        supabase.from('guild_participation_requests').select('challenge_id, user_id, profiles(username)').eq('guild_id', id),
+        supabase.rpc('get_guild_leaderboard_by_guild_challenges', { p_guild_id: id as string })
       ]);
 
       if (guildRes.error) throw guildRes.error;
-      setGuild(guildRes.data);
+      setGuild(guildRes.data as Guild);
 
       setGuildPoints(leaderboardRes.data?.total_xp || 0);
 
       if (membersRes.error) throw membersRes.error;
-      setMembers(membersRes.data || []);
+      setMembers(membersRes.data as Member[] || []);
 
       if (challengesRes.error) throw challengesRes.error;
-      setChallenges(challengesRes.data || []);
+      setChallenges(challengesRes.data as GuildChallenge[] || []);
 
-      if (profileRes.error) throw profileRes.error;
+      if (profileRes.error) {
+        console.warn('Could not fetch user profile for guild check:', profileRes.error.message);
+      }
       if (user && profileRes.data) {
         const isUserMember = profileRes.data.guild_id === id;
         setIsMember(isUserMember);
@@ -111,16 +115,19 @@ export default function GuildDetail() {
       }
 
       if (globalChallengesRes.error) throw globalChallengesRes.error;
-      setGlobalChallenges(globalChallengesRes.data || []);
+      setGlobalChallenges(globalChallengesRes.data as GlobalChallenge[] || []);
 
       if (registrationsRes.error) throw registrationsRes.error;
-      setRegistrations(registrationsRes.data || []);
+      setRegistrations(registrationsRes.data as Registration[] || []);
 
       if (participationRequestsRes.error) throw participationRequestsRes.error;
-      setParticipationRequests(participationRequestsRes.data as any || []);
+      setParticipationRequests(participationRequestsRes.data as ParticipationRequest[] || []);
+      
+      if (memberLeaderboardRes.error) throw memberLeaderboardRes.error;
+      setLeaderboard(memberLeaderboardRes.data as LeaderboardEntry[] || []);
 
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.');
     } finally {
       setLoading(false);
     }
@@ -138,8 +145,8 @@ export default function GuildDetail() {
       const { error } = await supabase.from('profiles').update({ guild_id: id }).eq('id', user.id);
       if (error) throw error;
       await fetchGuildData();
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.');
     }
   };
 
@@ -154,8 +161,8 @@ export default function GuildDetail() {
       const { error } = await supabase.from('profiles').update({ guild_id: null, is_guildleader: false }).eq('id', user.id);
       if (error) throw error;
       await fetchGuildData();
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred.');
     }
   };
 
@@ -170,8 +177,8 @@ export default function GuildDetail() {
       });
       if (error) throw error;
       await fetchGuildData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     }
   };
   
@@ -186,8 +193,8 @@ export default function GuildDetail() {
       });
       if (error) throw error;
       await fetchGuildData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     }
   };
   
@@ -202,8 +209,8 @@ export default function GuildDetail() {
         .eq('user_id', user.id);
       if (error) throw error;
       await fetchGuildData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     }
   };
 
@@ -237,6 +244,19 @@ export default function GuildDetail() {
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <FiAlertCircle className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error: {error}</h3>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">

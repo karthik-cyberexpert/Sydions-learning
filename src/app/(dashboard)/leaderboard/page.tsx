@@ -42,10 +42,12 @@ export default function Leaderboard() {
         // Add submission counts and rank to users
         const usersWithSubmissions = await Promise.all(
           (usersData || []).map(async (user) => {
-            const { count, error } = await supabase
+            const { count, error: countError } = await supabase
               .from('submissions')
               .select('*', { count: 'exact', head: true })
               .eq('user_id', user.id)
+            
+            if (countError) console.error('Error fetching submission count:', countError);
             
             return {
               ...user,

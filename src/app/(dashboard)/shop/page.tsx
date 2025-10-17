@@ -41,7 +41,7 @@ export default function ShopPage() {
     try {
       const { data: profileData, error: profileError } = await supabase.from('profiles').select('id, coins, guild_id').eq('id', user.id).single()
       if (profileError) throw profileError
-      setProfile(profileData)
+      setProfile(profileData as Profile)
 
       const { data: userInvData, error: userInvError } = await supabase.from('user_inventory').select('item_id').eq('user_id', user.id)
       if (userInvError) throw userInvError
@@ -55,10 +55,10 @@ export default function ShopPage() {
 
       const { data: itemsData, error: itemsError } = await supabase.from('shop_items').select('*').eq('is_reward_only', false).order('price', { ascending: true })
       if (itemsError) throw itemsError
-      setItems(itemsData || [])
+      setItems(itemsData as ShopItem[] || [])
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -88,8 +88,8 @@ export default function ShopPage() {
 
       setSuccess(`Successfully purchased ${item.name}!`)
       setProfile(prev => prev ? { ...prev, coins: prev.coins - item.price } : null)
-    } catch (err: any) {
-      setError(err.message || 'Purchase failed.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Purchase failed.')
     } finally {
       setPurchasing(null)
     }

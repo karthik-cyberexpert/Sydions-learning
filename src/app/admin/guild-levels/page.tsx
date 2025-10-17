@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { FiPlus, FiEdit, FiTrash, FiAlertCircle, FiAward, FiX, FiShield } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash, FiAlertCircle, FiX } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 
 interface GuildLevel {
@@ -82,10 +82,10 @@ export default function AdminGuildLevels() {
         .order('name', { ascending: true })
       
       if (itemsError) throw itemsError
-      setShopItems(itemsData || [])
+      setShopItems(itemsData as ShopItem[] || [])
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
       setLoading(false)
     }
@@ -162,8 +162,8 @@ export default function AdminGuildLevels() {
       
       setIsModalOpen(false)
       fetchData()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     }
   }
 
@@ -179,8 +179,8 @@ export default function AdminGuildLevels() {
       
       if (error) throw error
       fetchData()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     }
   }
 
