@@ -53,11 +53,30 @@ export default function VotePage() {
       // 2. Fetch Submissions
       const { data: submissionsData, error: submissionsError } = await supabase
         .from('submissions')
-        .select(`id, live_url, description, profiles ( username )`)
+        .select(`id, live_url, description, user_id`)
         .eq('challenge_id', challengeId)
       
       if (submissionsError) throw submissionsError
-      setSubmissions(submissionsData as any)
+      
+      if (submissionsData) {
+        const userIds = [...new Set(submissionsData.map(s => s.user_id))]
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', userIds)
+        
+        if (profilesError) throw profilesError
+
+        const profilesMap = new Map(profilesData.map(p => [p.id, p]))
+
+        const transformedSubmissions = submissionsData.map(submission => ({
+          ...submission,
+          profiles: profilesMap.get(submission.user_id) || null
+        }))
+        setSubmissions(transformedSubmissions as any)
+      } else {
+        setSubmissions([])
+      }
 
       // 3. Check for existing vote
       const { data: voteData, error: voteError } = await supabase
