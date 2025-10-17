@@ -25,6 +25,20 @@ interface ShopItem {
   item_type: string
 }
 
+// Define raw data structures for type safety
+interface RawLevelData {
+  level: number
+  xp_required: number
+  rank_name: string | null
+  level_rewards: RawRewardData[] | null
+}
+
+interface RawRewardData {
+  id: string
+  item_id: string
+  shop_items: { name: string, item_type: string }
+}
+
 export default function AdminLevels() {
   const [levels, setLevels] = useState<Level[]>([])
   const [shopItems, setShopItems] = useState<ShopItem[]>([])
@@ -65,11 +79,11 @@ export default function AdminLevels() {
       
       if (levelsError) throw levelsError
 
-      const transformedLevels: Level[] = (levelsData || []).map((l: any) => ({
+      const transformedLevels: Level[] = (levelsData as RawLevelData[] || []).map((l) => ({
         level: l.level,
         xp_required: l.xp_required,
         rank_name: l.rank_name,
-        rewards: (l.level_rewards || []).map((r: any) => ({
+        rewards: (l.level_rewards || []).map((r) => ({
           id: r.id,
           item_id: r.item_id,
           item_name: r.shop_items.name,

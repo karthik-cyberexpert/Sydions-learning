@@ -19,13 +19,24 @@ interface Guild {
 interface ShopItemDetails {
   name: string
   image_url: string | null
-  item_type: 'avatar' | 'banner'
+  item_type: 'avatar' | 'banner' | 'badge'
 }
 
 interface GuildInventoryItem {
   id: string
   item_id: string
   shop_items: ShopItemDetails
+}
+
+// Define the structure for the raw inventory data fetched from Supabase
+interface RawGuildInventoryData {
+  id: string
+  item_id: string
+  shop_items: {
+    name: string
+    image_url: string | null
+    item_type: 'avatar' | 'banner' | 'badge'
+  }
 }
 
 export default function GuildSettings() {
@@ -53,7 +64,7 @@ export default function GuildSettings() {
 
       const { data: invData, error: invError } = await supabase.from('guild_inventory').select(`id, item_id, shop_items (name, image_url, item_type)`).eq('guild_id', id)
       if (invError) throw invError
-      setInventory(invData as GuildInventoryItem[])
+      setInventory(invData as RawGuildInventoryData[] as GuildInventoryItem[])
 
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.')
@@ -130,7 +141,7 @@ export default function GuildSettings() {
           <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Guild Name</label><div className="mt-1"><input type="text" value={guild.name} disabled className="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400" /><p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Guild names cannot be changed.</p></div></div>
           <div><label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label><div className="mt-1"><textarea id="description" name="description" rows={4} maxLength={500} value={formData.description} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div></div>
           <div className="flex items-start"><div className="flex items-center h-5"><input id="is_public" name="is_public" type="checkbox" checked={formData.is_public} onChange={handleChange} className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" /></div><div className="ml-3 text-sm"><label htmlFor="is_public" className="font-medium text-gray-700 dark:text-gray-300">Public Guild</label><p className="text-gray-500 dark:text-gray-400">If unchecked, users will need to request to join.</p></div></div>
-          <div className="flex justify-end space-x-3"><button type="button" onClick={() => router.push(`/guilds/${id}`)} className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">Back to Guild</button><button type="submit" disabled={saving} className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"><FiSave className="mr-2 h-5 w-5" />{saving ? 'Saving...' : 'Save Settings'}</button></div>
+          <div className="flex justify-end space-x-3"><button type="button" onClick={() => router.push(`/guilds/${id}`)} className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">Back to Guild</button><button type="submit" disabled={saving} className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"><FiSave className="mr-2" />{saving ? 'Saving...' : 'Save Settings'}</button></div>
         </form>
       </div>
 

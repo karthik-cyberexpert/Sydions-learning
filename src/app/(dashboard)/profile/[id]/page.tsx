@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useParams, useRouter } from 'next/navigation'
-import { FiUser, FiAward, FiTrendingUp, FiGithub, FiLinkedin, FiGlobe, FiUserPlus, FiClock, FiCheck, FiMessageSquare, FiCode, FiExternalLink } from 'react-icons/fi'
+import { FiUser, FiAward, FiTrendingUp, FiGithub, FiLinkedin, FiGlobe, FiUserPlus, FiClock, FiCheck, FiMessageSquare, FiExternalLink } from 'react-icons/fi'
 import { getRankBadge } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -80,7 +80,7 @@ export default function PublicProfilePage() {
         rankName = rankData?.rank_name || 'Rookie'
       }
       
-      setProfile({ ...profileData, rank: rankName })
+      setProfile({ ...profileData, rank: rankName } as Profile)
 
       // 3. Fetch user submissions
       const { data: submissionsData, error: submissionsError } = await supabase
@@ -96,7 +96,7 @@ export default function PublicProfilePage() {
         .limit(5)
 
       if (submissionsError) throw submissionsError
-      setSubmissions(submissionsData as any)
+      setSubmissions(submissionsData as Submission[])
 
       // 4. Fetch friendship status
       if (currentUser) {

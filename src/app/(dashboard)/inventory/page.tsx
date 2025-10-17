@@ -113,7 +113,7 @@ export default function InventoryPage() {
       return
     }
 
-    let updatePayload: { [key: string]: string | null } = {}
+    const updatePayload: { [key: string]: string | null } = {}
     let successMessage = ''
     const table = isGuildItem ? 'guilds' : 'profiles'
 

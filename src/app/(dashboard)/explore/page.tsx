@@ -27,6 +27,22 @@ interface Project {
   created_at: string
 }
 
+// Define a type for the raw data fetched from Supabase
+interface RawProjectData {
+  id: string
+  user_id: string
+  description: string
+  live_url: string
+  created_at: string
+  challenges: { title: string, type: string }
+  guilds: { name: string } | null
+}
+
+interface ProfileMapEntry {
+  id: string
+  username: string
+}
+
 export default function Explore() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -70,10 +86,10 @@ export default function Explore() {
         if (profilesError) throw profilesError
 
         // 4. Create a map for easy lookup
-        const profilesMap = new Map(profilesData.map(p => [p.id, p]))
+        const profilesMap = new Map((profilesData as ProfileMapEntry[]).map(p => [p.id, p]))
         
         // 5. Combine data
-        const transformedData = data.map((project: any) => ({
+        const transformedData: Project[] = (data as RawProjectData[]).map((project) => ({
           id: project.id,
           title: project.challenges.title,
           description: project.description,
@@ -89,7 +105,7 @@ export default function Explore() {
           created_at: project.created_at,
         }))
         
-        setProjects(transformedData as Project[])
+        setProjects(transformedData)
       } catch (error: unknown) {
         console.error('Error fetching projects:', error)
       } finally {

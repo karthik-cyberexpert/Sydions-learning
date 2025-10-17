@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useParams } from 'next/navigation'
@@ -36,6 +36,15 @@ interface Submission {
   votes_count: number
 }
 
+// Define a type for the raw submission data fetched from Supabase
+interface RawSubmissionData {
+  id: string
+  user_id: string
+  live_url: string
+  description: string
+  guilds: { name: string } | null
+}
+
 export default function ChallengeDetail() {
   const { user } = useAuth()
   const { id } = useParams()
@@ -43,7 +52,7 @@ export default function ChallengeDetail() {
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userSubmission, setUserSubmission] = useState<any>(null) // Keeping 'any' here for simplicity of the submission object structure
+  const [userSubmission, setUserSubmission] = useState<RawSubmissionData | null>(null)
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -86,8 +95,10 @@ export default function ChallengeDetail() {
           if (profilesError) throw profilesError
           const profilesMap = new Map(profilesData.map(p => [p.id, p]))
 
-          const transformedData = submissionsData.map((submission: any) => ({
-            ...submission,
+          const transformedData: Submission[] = (submissionsData as RawSubmissionData[]).map((submission) => ({
+            id: submission.id,
+            live_url: submission.live_url,
+            description: submission.description,
             user: profilesMap.get(submission.user_id) || { username: 'Unknown' },
             team: null, // team data not available this way
             guild: submission.guilds,
@@ -100,13 +111,13 @@ export default function ChallengeDetail() {
         if (user) {
           const { data: userSubmissionData, error: userSubmissionError } = await supabase
             .from('submissions')
-            .select('*')
+            .select('id, user_id, live_url, description, guild_id, team_id')
             .eq('challenge_id', id)
             .eq('user_id', user.id)
             .single()
           
           if (!userSubmissionError && userSubmissionData) {
-            setUserSubmission(userSubmissionData)
+            setUserSubmission(userSubmissionData as RawSubmissionData)
           }
         }
       } catch (error: unknown) {

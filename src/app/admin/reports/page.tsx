@@ -16,6 +16,13 @@ interface ChallengeEngagement {
   submissions_count: number
 }
 
+// Define raw data structure for challenge engagement
+interface RawChallengeData {
+  id: string
+  title: string
+  submissions: [{ count: number }] | null
+}
+
 export default function AdminReports() {
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([])
   const [challengeEngagement, setChallengeEngagement] = useState<ChallengeEngagement[]>([])
@@ -39,10 +46,10 @@ export default function AdminReports() {
           .select('id, title, submissions(count)')
         if (challengesError) throw challengesError
         
-        const engagementData = (challengesData || []).map((c: any) => ({
+        const engagementData: ChallengeEngagement[] = (challengesData as RawChallengeData[] || []).map((c) => ({
           id: c.id,
           title: c.title,
-          submissions_count: c.submissions[0]?.count || 0,
+          submissions_count: c.submissions?.[0]?.count || 0,
         })).sort((a, b) => b.submissions_count - a.submissions_count)
         
         setChallengeEngagement(engagementData)

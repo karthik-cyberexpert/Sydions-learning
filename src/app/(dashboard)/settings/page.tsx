@@ -14,13 +14,10 @@ type ProfileData = {
 export default function SettingsPage() {
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()
-  const [isMounted, setIsMounted] = useState(false) // Renamed to avoid conflict
-  
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(true)
   
   // Profile state
-  const [profileData, setProfileData] = useState<ProfileData | null>(null) // Renamed to avoid conflict
   const [profileForm, setProfileForm] = useState({ username: '', full_name: '' })
   const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
@@ -30,7 +27,7 @@ export default function SettingsPage() {
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [isPasswordSaving, setIsPasswordSaving] = useState(false)
 
-  useEffect(() => setIsMounted(true), [])
+  useEffect(() => { /* isMounted logic removed */ }, [])
 
   const fetchProfile = useCallback(async () => {
     if (!user) return
@@ -44,7 +41,6 @@ export default function SettingsPage() {
       
       if (error) throw error
       
-      setProfileData(data as ProfileData)
       setProfileForm({
         username: data.username || '',
         full_name: data.full_name || '',
