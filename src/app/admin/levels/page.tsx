@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 interface Level {
   level: number
   xp_required: number
+  rank_name: string | null
   rewards: Reward[]
 }
 
@@ -35,6 +36,7 @@ export default function AdminLevels() {
   const [formData, setFormData] = useState({
     level: 0,
     xp_required: 0,
+    rank_name: '',
     rewards: [] as { item_id: string, item_name: string }[],
   })
 
@@ -52,6 +54,7 @@ export default function AdminLevels() {
         .select(`
           level,
           xp_required,
+          rank_name,
           level_rewards (
             id,
             item_id,
@@ -65,6 +68,7 @@ export default function AdminLevels() {
       const transformedLevels: Level[] = (levelsData || []).map((l: any) => ({
         level: l.level,
         xp_required: l.xp_required,
+        rank_name: l.rank_name,
         rewards: (l.level_rewards || []).map((r: any) => ({
           id: r.id,
           item_id: r.item_id,
@@ -96,12 +100,14 @@ export default function AdminLevels() {
       setFormData({
         level: level.level,
         xp_required: level.xp_required,
+        rank_name: level.rank_name || '',
         rewards: level.rewards.map(r => ({ item_id: r.item_id, item_name: r.item_name })),
       })
     } else {
       setFormData({
         level: levels.length > 0 ? Math.max(...levels.map(l => l.level)) + 1 : 1,
         xp_required: levels.length > 0 ? Math.max(...levels.map(l => l.xp_required)) + 1000 : 1000,
+        rank_name: '',
         rewards: [],
       })
     }
@@ -117,6 +123,7 @@ export default function AdminLevels() {
       const levelPayload = {
         level: formData.level,
         xp_required: formData.xp_required,
+        rank_name: formData.rank_name,
       }
 
       if (editingLevel) {
@@ -265,7 +272,7 @@ export default function AdminLevels() {
                     <span className="text-lg font-bold text-indigo-600 dark:text-indigo-300">{level.level}</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Level {level.level}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Level {level.level} - {level.rank_name || 'No Rank'}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Requires {level.xp_required.toLocaleString()} XP</p>
                   </div>
                 </div>
@@ -336,6 +343,20 @@ export default function AdminLevels() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
                   />
                 </div>
+              </div>
+              
+              <div>
+                <label htmlFor="rank_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rank Name</label>
+                <input 
+                  type="text" 
+                  name="rank_name" 
+                  id="rank_name" 
+                  required 
+                  value={formData.rank_name} 
+                  onChange={(e) => setFormData({...formData, rank_name: e.target.value})} 
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+                  placeholder="e.g., Master Dev, Legend"
+                />
               </div>
 
               {/* Reward Assignment */}

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import { FiUser, FiAward, FiSettings, FiGithub, FiLinkedin, FiGlobe, FiTrendingUp, FiAlertCircle } from 'react-icons/fi'
-import { getRankFromLevel, getRankBadge } from '@/lib/utils'
+import { getRankBadge } from '@/lib/utils'
 import Link from 'next/link'
 
 interface Profile {
@@ -36,14 +36,15 @@ export default function Profile() {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles_with_level')
-        .select('*')
+        .select('*, level_data:level(rank_name)') // Fetch rank_name based on level
         .eq('id', user.id)
         .single()
       
       if (profileError) throw profileError
       
-      const rank = getRankFromLevel(profileData.level)
-      setProfile({ ...profileData, rank })
+      const rankName = profileData.level_data?.rank_name || 'Rookie'
+      
+      setProfile({ ...profileData, rank: rankName })
 
     } catch (err: any) {
       console.error('Error fetching profile:', err)

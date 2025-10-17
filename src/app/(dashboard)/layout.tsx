@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { FiHome, FiCompass, FiUser, FiUsers, FiAward, FiSettings, FiLogOut, FiMoon, FiSun, FiShield, FiUserPlus, FiShoppingBag, FiMessageSquare, FiCpu, FiCalendar, FiPackage } from 'react-icons/fi'
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabaseClient'
+import { useResizableSidebar } from '@/hooks/useResizableSidebar'
 
 export default function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [userGuildId, setUserGuildId] = useState<string | null>(null)
+  const { width: sidebarWidth, startResizing, isResizing } = useResizableSidebar(256);
 
   useEffect(() => {
     setMounted(true)
@@ -89,10 +91,13 @@ export default function DashboardLayout({
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isResizing ? 'select-none' : ''}`}>
         {/* Sidebar */}
-        <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-          <div className="flex flex-col flex-grow pt-5 bg-white dark:bg-gray-800 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
+        <div 
+          className="hidden md:flex md:flex-col md:fixed md:inset-y-0 z-20"
+          style={{ width: sidebarWidth }}
+        >
+          <div className="flex flex-col flex-grow pt-5 bg-white dark:bg-gray-800 overflow-y-auto border-r border-gray-200 dark:border-gray-700 h-full">
             <div className="flex items-center flex-shrink-0 px-4">
               <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Sydions - Learning</h1>
             </div>
@@ -153,10 +158,15 @@ export default function DashboardLayout({
               </div>
             </div>
           </div>
+          {/* Resizer Handle */}
+          <div 
+            className="absolute top-0 right-0 w-2 h-full cursor-col-resize bg-transparent hover:bg-gray-300/50 dark:hover:bg-gray-700/50 transition-colors duration-100"
+            onMouseDown={startResizing}
+          />
         </div>
 
         {/* Main content */}
-        <div className="md:pl-64 flex flex-col flex-1">
+        <div className="flex flex-col flex-1" style={{ marginLeft: sidebarWidth }}>
           <main className="flex-1">
             <div className="py-6">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">

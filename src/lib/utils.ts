@@ -1,4 +1,6 @@
 export const getRankFromLevel = (level: number | null | undefined): string => {
+  // This function is now deprecated. Rank name should be fetched directly from the profiles_with_level view (which should include rank_name)
+  // For backward compatibility during transition, we keep a basic fallback.
   if (!level || level < 2) return 'Rookie';
   if (level < 5) return 'Apprentice';
   if (level < 8) return 'Developer';
@@ -13,9 +15,8 @@ export const getRankBadge = (rank: string): string => {
     case 'Apprentice':
       return '🥈';
     case 'Developer':
-      return '🥇';
     case 'Master Dev':
-      return '🧠';
+      return '🥇';
     case 'Legend':
       return '👑';
     default:
