@@ -101,7 +101,7 @@ export default function DashboardLayout({
             <div className="flex items-center flex-shrink-0 px-4">
               <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Sydions - Learning</h1>
             </div>
-            <div className="mt-5 flex-grow flex flex-col">
+            <div className="mt-5 flex-grow flex flex-col overflow-y-auto scrollbar-hide">
               <nav className="flex-1 px-2 pb-4 space-y-1">
                 {navigation.map((item) => {
                   const Icon = item.icon
