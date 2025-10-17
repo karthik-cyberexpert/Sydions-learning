@@ -24,7 +24,7 @@ export default function SubmitProject() {
   const [success, setSuccess] = useState(false)
   
   const [formData, setFormData] = useState({
-    project_url: '',
+    live_url: '',
     description: ''
   })
 
@@ -67,7 +67,7 @@ export default function SubmitProject() {
     try {
       // Validate project URL
       try {
-        new URL(formData.project_url)
+        new URL(formData.live_url)
       } catch {
         throw new Error('Please enter a valid URL')
       }
@@ -79,7 +79,7 @@ export default function SubmitProject() {
           {
             challenge_id: id,
             user_id: user?.id,
-            project_url: formData.project_url,
+            live_url: formData.live_url,
             description: formData.description
           }
         ])
@@ -191,7 +191,7 @@ export default function SubmitProject() {
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="project_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="live_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Project URL
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -200,10 +200,10 @@ export default function SubmitProject() {
               </div>
               <input
                 type="url"
-                name="project_url"
-                id="project_url"
+                name="live_url"
+                id="live_url"
                 required
-                value={formData.project_url}
+                value={formData.live_url}
                 onChange={handleChange}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 placeholder="https://your-project.vercel.app"

@@ -22,7 +22,7 @@ interface Challenge {
 
 interface Submission {
   id: string
-  project_url: string
+  live_url: string
   description: string
   user: {
     username: string
@@ -67,7 +67,7 @@ export default function ChallengeDetail() {
           .select(`
             id,
             user_id,
-            project_url,
+            live_url,
             description,
             guilds(name)
           `)
@@ -372,7 +372,7 @@ export default function ChallengeDetail() {
                       </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0">
                         <a
-                          href={submission.project_url}
+                          href={submission.live_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
