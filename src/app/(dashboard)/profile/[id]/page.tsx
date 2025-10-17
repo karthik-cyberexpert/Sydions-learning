@@ -9,8 +9,6 @@ import { getRankBadge } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 
-// Removed unused Link import
-
 type Profile = {
   id: string
   username: string
@@ -26,13 +24,14 @@ type Profile = {
   avatar_url: string | null
 }
 
+// FIX: Corrected the challenges property to be an array of objects
 interface Submission {
   id: string
   live_url: string
   description: string
   challenges: {
     title: string
-  }
+  }[]
 }
 
 type FriendshipStatus = 'not_friends' | 'request_sent' | 'request_received' | 'friends' | 'own_profile'
@@ -59,7 +58,7 @@ export default function PublicProfilePage() {
       // 1. Fetch profile data including the calculated level number
       const { data: profileData, error: profileError } = await supabase
         .from('profiles_with_level')
-        .select('*') // FIX: Select all columns from the view
+        .select('*')
         .eq('id', id)
         .single()
 
@@ -98,6 +97,7 @@ export default function PublicProfilePage() {
         .limit(5)
 
       if (submissionsError) throw submissionsError
+      // Line 101: The type assertion is now correct because the interface matches the array structure
       setSubmissions(submissionsData as Submission[])
 
       // 4. Fetch friendship status
@@ -244,8 +244,9 @@ export default function PublicProfilePage() {
                 <li key={submission.id}>
                   <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <div className="flex items-center justify-between">
+                      {/* FIX: Safely access the title from the first element of the challenges array */}
                       <div className="text-sm font-medium text-indigo-600 dark:text-indigo-400 truncate">
-                        {submission.challenges.title}
+                        {submission.challenges?.[0]?.title || 'Unknown Challenge'}
                       </div>
                       <a
                         href={submission.live_url}
