@@ -9,6 +9,7 @@ import MessageInput from './MessageInput'
 interface ProfileData {
   username: string
   avatar_url: string
+  full_name: string // Added full_name
 }
 
 export interface Message {
@@ -51,7 +52,8 @@ export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
           conversation_id,
           profiles (
             username,
-            avatar_url
+            avatar_url,
+            full_name
           )
         `)
         .eq('conversation_id', conversationId)
@@ -61,7 +63,7 @@ export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
 
       const transformedMessages = (data as RawMessageData[] || []).map(msg => ({
         ...msg,
-        profiles: msg.profiles?.[0] || { username: 'Unknown User', avatar_url: '' }
+        profiles: msg.profiles?.[0] || { username: 'Unknown User', avatar_url: '', full_name: '' }
       }));
 
       setMessages(transformedMessages);
@@ -82,7 +84,8 @@ export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
           conversation_id,
           profiles (
             username,
-            avatar_url
+            avatar_url,
+            full_name
           )
         `)
         .eq('id', messageId)
@@ -92,7 +95,7 @@ export default function ChatWindow({ user, conversationId }: ChatWindowProps) {
 
       const newMessage: Message = {
         ...(data as RawMessageData),
-        profiles: (data as RawMessageData).profiles?.[0] || { username: 'Unknown User', avatar_url: '' }
+        profiles: (data as RawMessageData).profiles?.[0] || { username: 'Unknown User', avatar_url: '', full_name: '' }
       };
 
       setMessages((prevMessages) => [...prevMessages, newMessage]);

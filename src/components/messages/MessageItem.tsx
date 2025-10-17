@@ -14,6 +14,9 @@ export default function MessageItem({ message, isCurrentUser }: MessageItemProps
     ? 'bg-indigo-500 text-white'
     : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
 
+  const senderName = message.profiles?.username || message.profiles?.full_name || 'Unknown User'
+  const senderInitial = senderName.charAt(0).toUpperCase()
+
   return (
     <div className={`flex items-end gap-2 ${alignment}`}>
       {!isCurrentUser && (
@@ -21,7 +24,7 @@ export default function MessageItem({ message, isCurrentUser }: MessageItemProps
           {message.profiles?.avatar_url ? (
             <Image
               src={message.profiles.avatar_url}
-              alt={message.profiles.username || 'User avatar'}
+              alt={senderName || 'User avatar'}
               width={40}
               height={40}
               className="rounded-full"
@@ -29,7 +32,7 @@ export default function MessageItem({ message, isCurrentUser }: MessageItemProps
           ) : (
             <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
               <span className="text-lg font-bold text-gray-500 dark:text-gray-400">
-                {message.profiles?.username?.charAt(0).toUpperCase() || '?'}
+                {senderInitial}
               </span>
             </div>
           )}
@@ -38,7 +41,7 @@ export default function MessageItem({ message, isCurrentUser }: MessageItemProps
       <div className="flex flex-col space-y-1 max-w-xs md:max-w-md">
         {!isCurrentUser && (
           <span className="text-xs text-gray-500 dark:text-gray-400 ml-3">
-            {message.profiles?.username || 'Unknown User'}
+            {senderName}
           </span>
         )}
         <div className={`px-4 py-2 rounded-lg ${bubbleColor}`}>
