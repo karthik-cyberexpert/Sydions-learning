@@ -11,6 +11,7 @@ interface Profile {
   full_name: string | null
   is_admin: boolean
   xp: number
+  created_at: string
 }
 
 export default function AdminUsers() {
@@ -29,7 +30,7 @@ export default function AdminUsers() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, full_name, is_admin, xp')
+        .select('id, username, full_name, is_admin, xp, created_at')
         .order('created_at', { ascending: false })
       
       if (error) throw error
