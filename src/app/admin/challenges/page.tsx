@@ -119,7 +119,7 @@ export default function AdminChallenges() {
                 </div>
                 <div className="flex items-center space-x-4">
                   <Link
-                    href={`/challenges/${challenge.id}`}
+                    href={`/admin/challenges/${challenge.id}/edit`}
                     className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <FiEdit className="h-5 w-5" />

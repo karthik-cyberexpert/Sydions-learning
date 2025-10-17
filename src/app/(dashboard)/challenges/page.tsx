@@ -26,20 +26,31 @@ export default function Challenges() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [sortBy, setSortBy] = useState('deadline')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    const fetchChallenges = async () => {
+    const fetchChallengesAndAdminStatus = async () => {
       try {
+        // Check admin status
+        if (user) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .single()
+          if (profileError) throw profileError
+          setIsAdmin(profile?.is_admin || false)
+        }
+
+        // Fetch challenges
         let query = supabase
           .from('challenges')
           .select('*')
         
-        // Apply filters
         if (filter !== 'all') {
           query = query.eq('type', filter)
         }
         
-        // Apply sorting
         if (sortBy === 'deadline') {
           query = query.order('deadline', { ascending: true })
         } else if (sortBy === 'created') {
@@ -57,8 +68,8 @@ export default function Challenges() {
       }
     }
     
-    fetchChallenges()
-  }, [filter, sortBy])
+    fetchChallengesAndAdminStatus()
+  }, [filter, sortBy, user])
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -135,14 +146,16 @@ export default function Challenges() {
             Participate in challenges to earn XP and climb the leaderboard
           </p>
         </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
-          <Link
-            href="/challenges/create"
-            className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Create Challenge
-          </Link>
-        </div>
+        {isAdmin && (
+          <div className="mt-4 flex md:mt-0 md:ml-4">
+            <Link
+              href="/challenges/create"
+              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Create Challenge
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
