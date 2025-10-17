@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
-import { FiUsers, FiStar, FiUser, FiCalendar, FiAlertCircle, FiLogIn, FiLogOut, FiAward, FiMessageSquare, FiInfo, FiCode, FiPlus, FiGlobe, FiCheck, FiSend } from 'react-icons/fi'
+import { FiUsers, FiStar, FiUser, FiCalendar, FiAlertCircle, FiLogIn, FiLogOut, FiAward, FiMessageSquare, FiInfo, FiCode, FiPlus, FiGlobe, FiCheck, FiSend, FiSettings } from 'react-icons/fi'
 import Link from 'next/link'
 import ChatPanel from '@/components/ChatPanel'
 
@@ -132,6 +132,7 @@ export default function GuildDetail() {
 
   const handleJoinGuild = async () => {
     if (!user) return;
+    if (!window.confirm(`Are you sure you want to join ${guild?.name}?`)) return;
     setError(null);
     try {
       const { error } = await supabase.from('profiles').update({ guild_id: id }).eq('id', user.id);
@@ -147,6 +148,7 @@ export default function GuildDetail() {
       setError('Guild leaders cannot leave their guild. Please delete the guild instead.');
       return;
     }
+    if (!window.confirm(`Are you sure you want to leave ${guild?.name}?`)) return;
     setError(null);
     try {
       const { error } = await supabase.from('profiles').update({ guild_id: null, is_guildleader: false }).eq('id', user.id);
@@ -221,7 +223,12 @@ export default function GuildDetail() {
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{guild.name}</h1>
             <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{guild.description}</p>
           </div>
-          <div className="mt-4 md:mt-0">
+          <div className="mt-4 md:mt-0 flex items-center space-x-2">
+            {isLeader && (
+              <Link href={`/guilds/${guild.id}/settings`} className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700">
+                <FiSettings className="mr-2" /> Settings
+              </Link>
+            )}
             {isMember ? (
               <button onClick={handleLeaveGuild} disabled={isLeader} className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm ${isLeader ? 'text-gray-400 bg-gray-100 cursor-not-allowed dark:bg-gray-700' : 'text-white bg-red-600 hover:bg-red-700'}`}><FiLogOut className="mr-2" />{isLeader ? 'You are the Leader' : 'Leave Guild'}</button>
             ) : (
