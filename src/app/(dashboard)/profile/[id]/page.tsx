@@ -43,15 +43,32 @@ export default function PublicProfilePage() {
 
     setLoading(true)
     try {
+      // 1. Fetch profile data including the calculated level
       const { data: profileData, error: profileError } = await supabase
         .from('profiles_with_level')
-        .select('*, level_data:level(rank_name)') // Fetch rank_name based on level
+        .select('*')
         .eq('id', id)
         .single()
 
       if (profileError) throw profileError
       
-      const rankName = profileData.level_data?.rank_name || 'Rookie'
+      let rankName = 'Rookie'
+
+      // 2. Fetch rank name based on the level number
+      if (profileData.level) {
+        const { data: rankData, error: rankError } = await supabase
+          .from('levels')
+          .select('rank_name')
+          .eq('level', profileData.level)
+          .single()
+        
+        if (rankError && rankError.code !== 'PGRST116') { // PGRST116 means no rows found
+          console.warn('Error fetching rank name:', rankError)
+        }
+        
+        rankName = rankData?.rank_name || 'Rookie'
+      }
+      
       setProfile({ ...profileData, rank: rankName })
 
       if (currentUser) {
