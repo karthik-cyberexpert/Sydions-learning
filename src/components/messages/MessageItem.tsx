@@ -14,16 +14,20 @@ export default function MessageItem({ message, isCurrentUser }: MessageItemProps
     ? 'bg-indigo-500 text-white'
     : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
 
-  const senderName = message.profiles?.username || message.profiles?.full_name || 'Unknown User'
-  const senderInitial = senderName.charAt(0).toUpperCase()
+  // Safely access profile data, falling back to empty strings if the profile object itself is incomplete
+  const profile = message.profiles || {};
+  
+  // Prioritize username, then full_name, then fall back to 'Unknown User'
+  const senderName = profile.username || profile.full_name || 'Unknown User';
+  const senderInitial = senderName.charAt(0).toUpperCase();
 
   return (
     <div className={`flex items-end gap-2 ${alignment}`}>
       {!isCurrentUser && (
         <div className="flex-shrink-0">
-          {message.profiles?.avatar_url ? (
+          {profile.avatar_url ? (
             <Image
-              src={message.profiles.avatar_url}
+              src={profile.avatar_url}
               alt={senderName || 'User avatar'}
               width={40}
               height={40}
