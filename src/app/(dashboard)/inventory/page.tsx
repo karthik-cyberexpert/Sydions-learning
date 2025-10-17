@@ -160,9 +160,12 @@ export default function InventoryPage() {
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>
 
   const currentInventory = activeTab === 'user' ? personalInventory : guildInventory
-  const avatars = currentInventory.filter(i => i.shop_items.item_type === 'avatar')
-  const banners = currentInventory.filter(i => i.shop_items.item_type === 'banner')
-  const badges = currentInventory.filter(i => i.shop_items.item_type === 'badge')
+  
+  // FIX: Access the item_type from the first element of the shop_items array
+  const avatars = currentInventory.filter(i => i.shop_items?.[0]?.item_type === 'avatar')
+  const banners = currentInventory.filter(i => i.shop_items?.[0]?.item_type === 'banner')
+  const badges = currentInventory.filter(i => i.shop_items?.[0]?.item_type === 'badge')
+  
   const isGuildTab = activeTab === 'guild'
 
   return (
