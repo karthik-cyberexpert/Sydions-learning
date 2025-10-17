@@ -6,12 +6,18 @@ import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
 import { FiAlertCircle } from 'react-icons/fi'
 
+interface Guild {
+  id: string
+  name: string
+}
+
 export default function EditChallenge() {
   const { user } = useAuth()
   const router = useRouter()
   const { id } = useParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [guilds, setGuilds] = useState<Guild[]>([])
   
   const [formData, setFormData] = useState({
     title: '',
@@ -21,14 +27,14 @@ export default function EditChallenge() {
     deadline: '',
     max_points: 100,
     max_team_size: 3,
-    status: 'Upcoming'
+    status: 'Upcoming',
+    guild_id: '' as string | null,
   })
 
   useEffect(() => {
-    const fetchChallenge = async () => {
+    const fetchChallengeAndGuilds = async () => {
       if (!id) return
       try {
-        // Check if user is admin
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
@@ -39,7 +45,6 @@ export default function EditChallenge() {
           throw new Error('You do not have permission to edit challenges.')
         }
 
-        // Fetch challenge data
         const { data, error: challengeError } = await supabase
           .from('challenges')
           .select('*')
@@ -48,26 +53,34 @@ export default function EditChallenge() {
         
         if (challengeError) throw challengeError
 
+        const { data: guildsData, error: guildsError } = await supabase
+          .from('guilds')
+          .select('id, name')
+          .order('name')
+
+        if (guildsError) throw guildsError
+        setGuilds(guildsData || [])
+
         setFormData({
           title: data.title,
           description: data.description,
           type: data.type,
           difficulty: data.difficulty,
-          deadline: new Date(data.deadline).toISOString().slice(0, 16), // Format for datetime-local input
+          deadline: new Date(data.deadline).toISOString().slice(0, 16),
           max_points: data.max_points,
           max_team_size: data.max_team_size || 3,
-          status: data.status
+          status: data.status,
+          guild_id: data.guild_id,
         })
       } catch (err: any) {
         setError(err.message)
-        // Redirect if not authorized or challenge not found
         setTimeout(() => router.push('/admin/challenges'), 3000)
       } finally {
         setLoading(false)
       }
     }
     if (user) {
-      fetchChallenge()
+      fetchChallengeAndGuilds()
     }
   }, [id, user, router])
 
@@ -95,7 +108,8 @@ export default function EditChallenge() {
           deadline: formData.deadline,
           max_points: formData.max_points,
           max_team_size: formData.type === 'tag-team' ? formData.max_team_size : null,
-          status: formData.status
+          status: formData.status,
+          guild_id: formData.guild_id || null,
         })
         .eq('id', id)
       
@@ -284,6 +298,26 @@ export default function EditChallenge() {
                   <option value="Upcoming">Upcoming</option>
                   <option value="Voting">Voting</option>
                   <option value="Completed">Completed</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="sm:col-span-6">
+              <label htmlFor="guild_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Assign to Guild (Optional)
+              </label>
+              <div className="mt-1">
+                <select
+                  id="guild_id"
+                  name="guild_id"
+                  value={formData.guild_id || ''}
+                  onChange={handleChange}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="">None (Global Challenge)</option>
+                  {guilds.map(guild => (
+                    <option key={guild.id} value={guild.id}>{guild.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

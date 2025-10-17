@@ -1,26 +1,69 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { FiAlertCircle } from 'react-icons/fi'
 
-export default function CreateChallenge() {
+function CreateChallengeContent() {
   const { user } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const guildId = searchParams.get('guildId')
+
   const [loading, setLoading] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    type: 'solo',
+    type: guildId ? 'guild' : 'solo',
     difficulty: 'beginner',
     deadline: '',
     max_points: 100,
-    max_team_size: 3
+    max_team_size: 3,
+    guild_id: guildId || null,
   })
+
+  useEffect(() => {
+    if (!user) return;
+
+    const checkPermissions = async () => {
+      setAuthLoading(true);
+      try {
+        if (guildId) {
+          const { data: guildData, error: guildError } = await supabase
+            .from('guilds')
+            .select('owner_id')
+            .eq('id', guildId)
+            .single();
+          
+          if (guildError || !guildData) throw new Error('Guild not found.');
+          if (guildData.owner_id !== user.id) throw new Error('You are not the leader of this guild and cannot create challenges for it.');
+
+        } else {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .single();
+          
+          if (profileError || !profile?.is_admin) {
+            throw new Error('Only admins can create global challenges.');
+          }
+        }
+      } catch (err: any) {
+        setError(err.message);
+        setTimeout(() => router.push('/challenges'), 3000);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkPermissions();
+  }, [user, guildId, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -36,21 +79,7 @@ export default function CreateChallenge() {
     setError(null)
     
     try {
-      // Check if user is admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user?.id)
-        .single()
-      
-      if (profileError) throw profileError
-      
-      if (!profile?.is_admin) {
-        throw new Error('Only admins can create challenges')
-      }
-      
-      // Insert the new challenge
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('challenges')
         .insert([
           {
@@ -61,20 +90,27 @@ export default function CreateChallenge() {
             deadline: formData.deadline,
             max_points: formData.max_points,
             max_team_size: formData.type === 'tag-team' ? formData.max_team_size : null,
-            status: 'Upcoming'
+            status: 'Upcoming',
+            guild_id: formData.guild_id,
           }
         ])
-        .select()
       
       if (error) throw error
       
-      // Redirect to admin challenges page
-      router.push('/admin/challenges')
+      if (guildId) {
+        router.push(`/guilds/${guildId}`);
+      } else {
+        router.push('/admin/challenges');
+      }
     } catch (error: any) {
       setError(error.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  if (authLoading) {
+    return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>
   }
 
   return (
@@ -84,7 +120,7 @@ export default function CreateChallenge() {
           Create New Challenge
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Create a new coding challenge for the community
+          {guildId ? 'Create a new challenge for your guild.' : 'Create a new global challenge for the community.'}
         </p>
       </div>
 
@@ -148,7 +184,8 @@ export default function CreateChallenge() {
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  disabled={!!guildId}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600"
                 >
                   <option value="solo">Solo</option>
                   <option value="tag-team">Tag-Team</option>
@@ -253,5 +290,13 @@ export default function CreateChallenge() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function CreateChallenge() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>}>
+      <CreateChallengeContent />
+    </Suspense>
   )
 }
