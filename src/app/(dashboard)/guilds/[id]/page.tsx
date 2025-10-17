@@ -40,7 +40,7 @@ interface ParticipationRequest {
   user_id: string;
   profiles: {
     username: string;
-  } | null;
+  }[] | null;
 }
 
 interface LeaderboardEntry {
@@ -307,7 +307,7 @@ export default function GuildDetail() {
                       <div className="flex flex-wrap gap-2 mt-2">
                         {requestsForThisChallenge.map(req => (
                           <span key={req.user_id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                            {req.profiles?.username || '...'}
+                            {req.profiles && req.profiles.length > 0 ? req.profiles[0].username : '...'}
                           </span>
                         ))}
                       </div>

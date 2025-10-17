@@ -16,14 +16,14 @@ interface InventoryItem {
   id: string
   item_id: string
   purchased_at: string
-  shop_items: ShopItemDetails
+  shop_items: ShopItemDetails[]
 }
 
 interface GuildInventoryItem {
   id: string
   item_id: string
   purchased_at: string
-  shop_items: ShopItemDetails
+  shop_items: ShopItemDetails[]
 }
 
 interface Profile {
@@ -113,18 +113,26 @@ export default function InventoryPage() {
       return
     }
 
+    // Get the first item from the array
+    const itemDetails = item.shop_items && item.shop_items.length > 0 ? item.shop_items[0] : null;
+    if (!itemDetails) {
+      setUpdating(false)
+      setError('Cannot equip item: Item details not found.')
+      return
+    }
+
     const updatePayload: { [key: string]: string | null } = {}
     let successMessage = ''
     const table = isGuildItem ? 'guilds' : 'profiles'
 
-    if (item.shop_items.item_type === 'avatar') {
+    if (itemDetails.item_type === 'avatar') {
       updatePayload.equipped_avatar_id = item.item_id
-      updatePayload.avatar_url = item.shop_items.image_url
-      successMessage = `${isGuildItem ? 'Guild Avatar' : 'Avatar'} '${item.shop_items.name}' equipped!`
-    } else if (item.shop_items.item_type === 'banner') {
+      updatePayload.avatar_url = itemDetails.image_url
+      successMessage = `${isGuildItem ? 'Guild Avatar' : 'Avatar'} '${itemDetails.name}' equipped!`
+    } else if (itemDetails.item_type === 'banner') {
       updatePayload.equipped_banner_id = item.item_id
-      updatePayload.banner_url = item.shop_items.image_url
-      successMessage = `${isGuildItem ? 'Guild Banner' : 'Banner'} '${item.shop_items.name}' equipped!`
+      updatePayload.banner_url = itemDetails.image_url
+      successMessage = `${isGuildItem ? 'Guild Banner' : 'Banner'} '${itemDetails.name}' equipped!`
     } else {
       setUpdating(false)
       return // Badges are automatically displayed
@@ -186,13 +194,13 @@ export default function InventoryPage() {
           {avatars.map(item => (
             <div key={item.id} className="flex flex-col items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                {item.shop_items.image_url ? (
-                  <img src={item.shop_items.image_url} alt={item.shop_items.name} className="w-full h-full object-cover" />
+                {item.shop_items && item.shop_items.length > 0 && item.shop_items[0].image_url ? (
+                  <img src={item.shop_items[0].image_url} alt={item.shop_items[0].name} className="w-full h-full object-cover" />
                 ) : (
                   <FiUser className="h-8 w-8 text-gray-500" />
                 )}
               </div>
-              <p className="mt-2 text-sm font-medium text-center text-gray-900 dark:text-white">{item.shop_items.name}</p>
+              <p className="mt-2 text-sm font-medium text-center text-gray-900 dark:text-white">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].name : 'Unknown Item'}</p>
               <button
                 onClick={() => handleEquipItem(item, isGuildTab)}
                 disabled={updating || (isGuildTab ? false : profile?.equipped_avatar_id === item.item_id)}
@@ -215,11 +223,11 @@ export default function InventoryPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {banners.map(item => (
             <div key={item.id} className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <div className="flex-grow h-16 rounded-md bg-gray-100 dark:bg-gray-700 overflow-hidden" style={{ backgroundImage: `url(${item.shop_items.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                {!item.shop_items.image_url && <div className="h-full flex items-center justify-center text-gray-500">Banner Preview</div>}
+              <div className="flex-grow h-16 rounded-md bg-gray-100 dark:bg-gray-700 overflow-hidden" style={{ backgroundImage: `url(${item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].image_url : ''})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                {!item.shop_items || item.shop_items.length === 0 || !item.shop_items[0].image_url && <div className="h-full flex items-center justify-center text-gray-500">Banner Preview</div>}
               </div>
               <div className="ml-4 flex-shrink-0 w-40">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.shop_items.name}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].name : 'Unknown Item'}</p>
                 <button
                   onClick={() => handleEquipItem(item, isGuildTab)}
                   disabled={updating || (isGuildTab ? false : profile?.equipped_banner_id === item.item_id)}
@@ -245,13 +253,13 @@ export default function InventoryPage() {
             {badges.map(item => (
               <div key={item.id} className="flex flex-col items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg w-24">
                 <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center overflow-hidden">
-                  {item.shop_items.image_url ? (
-                    <img src={item.shop_items.image_url} alt={item.shop_items.name} className="w-full h-full object-cover" />
+                  {item.shop_items && item.shop_items.length > 0 && item.shop_items[0].image_url ? (
+                    <img src={item.shop_items[0].image_url} alt={item.shop_items[0].name} className="w-full h-full object-cover" />
                   ) : (
                     <FiAward className="h-6 w-6 text-yellow-600" />
                   )}
                 </div>
-                <p className="mt-2 text-xs font-medium text-center text-gray-900 dark:text-white">{item.shop_items.name}</p>
+                <p className="mt-2 text-xs font-medium text-center text-gray-900 dark:text-white">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].name : 'Unknown Item'}</p>
               </div>
             ))}
           </div>

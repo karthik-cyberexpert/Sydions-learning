@@ -34,8 +34,9 @@ interface RawProjectData {
   description: string
   live_url: string
   created_at: string
-  challenges: { title: string, type: string }
-  guilds: { name: string } | null
+  // Supabase returns these as arrays even if the relationship is 1:1
+  challenges: { title: string, type: string }[]
+  guilds: { name: string }[] | null
 }
 
 interface ProfileMapEntry {
@@ -89,21 +90,26 @@ export default function Explore() {
         const profilesMap = new Map((profilesData as ProfileMapEntry[]).map(p => [p.id, p]))
         
         // 5. Combine data
-        const transformedData: Project[] = (data as RawProjectData[]).map((project) => ({
-          id: project.id,
-          title: project.challenges.title,
-          description: project.description,
-          project_url: project.live_url,
-          challenge: {
-            title: project.challenges.title,
-            type: project.challenges.type,
-          },
-          user: profilesMap.get(project.user_id) || { username: 'Unknown' },
-          guild: project.guilds ? { name: project.guilds.name } : null,
-          team: null, // Team data structure is complex, setting to null for now
-          votes_count: 0, // votes_count is not available in the schema
-          created_at: project.created_at,
-        }))
+        const transformedData: Project[] = (data as RawProjectData[]).map((project) => {
+          const challengeData = project.challenges?.[0];
+          const guildData = project.guilds?.[0];
+
+          return {
+            id: project.id,
+            title: challengeData?.title || 'Untitled',
+            description: project.description,
+            project_url: project.live_url,
+            challenge: {
+              title: challengeData?.title || 'Untitled',
+              type: challengeData?.type || 'solo',
+            },
+            user: profilesMap.get(project.user_id) || { username: 'Unknown' },
+            guild: guildData ? { name: guildData.name } : null,
+            team: null, // Team data structure is complex, setting to null for now
+            votes_count: 0, // votes_count is not available in the schema
+            created_at: project.created_at,
+          }
+        })
         
         setProjects(transformedData)
       } catch (error: unknown) {

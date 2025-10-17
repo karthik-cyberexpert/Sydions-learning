@@ -25,7 +25,7 @@ interface ShopItemDetails {
 interface GuildInventoryItem {
   id: string
   item_id: string
-  shop_items: ShopItemDetails
+  shop_items: ShopItemDetails[]
 }
 
 // Define the structure for the raw inventory data fetched from Supabase
@@ -36,7 +36,7 @@ interface RawGuildInventoryData {
     name: string
     image_url: string | null
     item_type: 'avatar' | 'banner' | 'badge'
-  }
+  }[]
 }
 
 export default function GuildSettings() {
@@ -100,11 +100,14 @@ export default function GuildSettings() {
   const handleEquip = async (item: GuildInventoryItem) => {
     setSaving(true)
     try {
-      const payload = item.shop_items.item_type === 'avatar' ? { avatar_url: item.shop_items.image_url } : { banner_url: item.shop_items.image_url }
+      const itemDetails = item.shop_items && item.shop_items.length > 0 ? item.shop_items[0] : null;
+      if (!itemDetails) throw new Error('Item details not found');
+      
+      const payload = itemDetails.item_type === 'avatar' ? { avatar_url: itemDetails.image_url } : { banner_url: itemDetails.image_url }
       const { error } = await supabase.from('guilds').update(payload).eq('id', id)
       if (error) throw error
       setGuild(prev => prev ? { ...prev, ...payload } : null)
-      setSuccess(`${item.shop_items.item_type} updated!`)
+      setSuccess(`${itemDetails.item_type} updated!`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.')
     } finally {
@@ -150,7 +153,7 @@ export default function GuildSettings() {
         <div className="space-y-4">
           {inventory.map(item => (
             <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center"><div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3">{item.shop_items.image_url ? <img src={item.shop_items.image_url} alt={item.shop_items.name} className="w-full h-full object-cover" /> : <FiPackage />}</div><div><p className="font-medium">{item.shop_items.name}</p><p className="text-xs text-gray-500">{item.shop_items.item_type}</p></div></div>
+              <div className="flex items-center"><div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3">{item.shop_items && item.shop_items.length > 0 && item.shop_items[0].image_url ? <img src={item.shop_items[0].image_url} alt={item.shop_items[0].name} className="w-full h-full object-cover" /> : <FiPackage />}</div><div><p className="font-medium">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].name : 'Unknown Item'}</p><p className="text-xs text-gray-500">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].item_type : 'Unknown Type'}</p></div></div>
               <button onClick={() => handleEquip(item)} disabled={saving} className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">Equip</button>
             </div>
           ))}
