@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useParams, useRouter } from 'next/navigation'
-import { FiUser, FiAward, FiTrendingUp, FiGithub, FiLinkedin, FiGlobe, FiUserPlus, FiClock, FiCheck, FiMessageSquare } from 'react-icons/fi'
+import { FiUser, FiAward, FiTrendingUp, FiGithub, FiLinkedin, FiGlobe, FiUserPlus, FiClock, FiCheck, FiMessageSquare, FiCode, FiExternalLink } from 'react-icons/fi'
 import { getRankBadge } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 type Profile = {
   id: string
@@ -23,6 +24,15 @@ type Profile = {
   avatar_url: string | null
 }
 
+interface Submission {
+  id: string
+  live_url: string
+  description: string
+  challenges: {
+    title: string
+  }
+}
+
 type FriendshipStatus = 'not_friends' | 'request_sent' | 'request_received' | 'friends' | 'own_profile'
 
 export default function PublicProfilePage() {
@@ -31,6 +41,7 @@ export default function PublicProfilePage() {
   const router = useRouter()
 
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [friendshipStatus, setFriendshipStatus] = useState<FriendshipStatus>('not_friends')
 
@@ -46,31 +57,32 @@ export default function PublicProfilePage() {
       // 1. Fetch profile data including the calculated level
       const { data: profileData, error: profileError } = await supabase
         .from('profiles_with_level')
-        .select('*')
+        .select('*, level_data:level(rank_name)')
         .eq('id', id)
         .single()
 
       if (profileError) throw profileError
       
-      let rankName = 'Rookie'
-
-      // 2. Fetch rank name based on the level number
-      if (profileData.level) {
-        const { data: rankData, error: rankError } = await supabase
-          .from('levels')
-          .select('rank_name')
-          .eq('level', profileData.level)
-          .single()
-        
-        if (rankError && rankError.code !== 'PGRST116') { // PGRST116 means no rows found
-          console.warn('Error fetching rank name:', rankError)
-        }
-        
-        rankName = rankData?.rank_name || 'Rookie'
-      }
-      
+      const rankName = profileData.level_data?.rank_name || 'Rookie'
       setProfile({ ...profileData, rank: rankName })
 
+      // 2. Fetch user submissions
+      const { data: submissionsData, error: submissionsError } = await supabase
+        .from('submissions')
+        .select(`
+          id,
+          live_url,
+          description,
+          challenges ( title )
+        `)
+        .eq('user_id', id)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (submissionsError) throw submissionsError
+      setSubmissions(submissionsData as any)
+
+      // 3. Fetch friendship status
       if (currentUser) {
         const { data: requestDataArray, error: requestError } = await supabase
           .from('friend_requests')
@@ -153,8 +165,12 @@ export default function PublicProfilePage() {
         <div className={`h-32 bg-gradient-to-r from-indigo-500 to-purple-500 ${profile.banner_url ? 'bg-cover bg-center' : ''}`} style={{ backgroundImage: `url(${profile.banner_url})` }}></div>
         <div className="px-4 py-5 sm:px-6 -mt-16 sm:-mt-20">
           <div className="flex items-end space-x-5">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 ring-4 ring-white dark:ring-gray-800 flex items-center justify-center">
-              <span className="text-5xl font-bold text-gray-600">{profile.username?.charAt(0).toUpperCase()}</span>
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 ring-4 ring-white dark:ring-gray-800 flex items-center justify-center overflow-hidden">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-5xl font-bold text-gray-600">{profile.username?.charAt(0).toUpperCase()}</span>
+              )}
             </div>
             <div className="pb-4 sm:pb-6">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.username}</h1>
@@ -175,7 +191,8 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      {/* Stats (Removed Coins) */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-5">
           <div className="flex items-center"><FiAward className="h-6 w-6 text-indigo-500 mr-3" /><dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Rank</dt></div>
           <dd className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{profile.rank}</dd>
@@ -184,10 +201,52 @@ export default function PublicProfilePage() {
           <div className="flex items-center"><FiTrendingUp className="h-6 w-6 text-green-500 mr-3" /><dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total XP</dt></div>
           <dd className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{profile.xp}</dd>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-5">
-          <div className="flex items-center"><FiAward className="h-6 w-6 text-yellow-500 mr-3" /><dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Coins</dt></div>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{profile.coins}</dd>
-        </motion.div>
+      </div>
+
+      {/* Submitted Projects */}
+      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+        <div className="px-4 py-5 sm:px-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+            Recent Submissions ({submissions.length})
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+            Projects submitted for challenges
+          </p>
+        </div>
+        <div className="border-t border-gray-200 dark:border-gray-700">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {submissions.length > 0 ? (
+              submissions.map((submission) => (
+                <li key={submission.id}>
+                  <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-indigo-600 dark:text-indigo-400 truncate">
+                        {submission.challenges.title}
+                      </div>
+                      <a
+                        href={submission.live_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 flex-shrink-0 flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600"
+                      >
+                        View Project <FiExternalLink className="ml-1 h-4 w-4" />
+                      </a>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        {submission.description}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <li className="p-6 text-center text-gray-500 dark:text-gray-400">
+                This user has not submitted any projects yet.
+              </li>
+            )}
+          </ul>
+        </div>
       </div>
     </div>
   )
