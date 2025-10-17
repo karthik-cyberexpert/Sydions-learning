@@ -7,6 +7,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { FiUser, FiAward, FiTrendingUp, FiGithub, FiLinkedin, FiGlobe, FiUserPlus, FiClock, FiCheck, FiMessageSquare, FiExternalLink } from 'react-icons/fi'
 import { getRankBadge } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
+
 // Removed unused Link import
 
 type Profile = {
@@ -181,9 +183,15 @@ export default function PublicProfilePage() {
         <div className={`h-32 bg-gradient-to-r from-indigo-500 to-purple-500 ${profile.banner_url ? 'bg-cover bg-center' : ''}`} style={{ backgroundImage: `url(${profile.banner_url})` }}></div>
         <div className="px-4 py-5 sm:px-6 -mt-16 sm:-mt-20">
           <div className="flex items-end space-x-5">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 ring-4 ring-white dark:ring-gray-800 flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 ring-4 ring-white dark:ring-gray-800 flex items-center justify-center overflow-hidden relative">
               {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                <Image 
+                  src={profile.avatar_url} 
+                  alt={`${profile.username}'s avatar`} 
+                  fill 
+                  sizes="(max-width: 768px) 96px, 128px"
+                  className="object-cover" 
+                />
               ) : (
                 <span className="text-5xl font-bold text-gray-600">{profile.username?.charAt(0).toUpperCase()}</span>
               )}

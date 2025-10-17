@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { FiShoppingBag, FiAward, FiAlertCircle, FiCheckCircle, FiUser, FiShield } from 'react-icons/fi'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 
 interface ShopItem {
   id: string
@@ -120,7 +121,21 @@ export default function ShopPage() {
                 <div className="p-6 flex-grow">
                   <div className="flex items-center justify-between"><h3 className="text-lg font-medium text-gray-900 dark:text-white">{item.name}</h3><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">{item.item_type.charAt(0).toUpperCase() + item.item_type.slice(1)}</span></div>
                   <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{item.description}</p>
-                  <div className="mt-4 flex justify-center"><div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">{item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /> : <FiShoppingBag className="h-10 w-10 text-gray-500" />}</div></div>
+                  <div className="mt-4 flex justify-center">
+                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden relative">
+                      {item.image_url ? (
+                        <Image 
+                          src={item.image_url} 
+                          alt={item.name} 
+                          fill 
+                          sizes="96px"
+                          className="object-cover" 
+                        />
+                      ) : (
+                        <FiShoppingBag className="h-10 w-10 text-gray-500" />
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
                   <span className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{item.price.toLocaleString()} Coins</span>

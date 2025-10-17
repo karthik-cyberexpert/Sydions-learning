@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { FiUser, FiAward, FiAlertCircle, FiShield } from 'react-icons/fi'
+import Image from 'next/image'
 
 interface ShopItemDetails {
   name: string
@@ -201,9 +202,15 @@ export default function InventoryPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {avatars.map(item => (
             <div key={item.id} className="flex flex-col items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+              <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative">
                 {item.shop_items && item.shop_items.length > 0 && item.shop_items[0].image_url ? (
-                  <img src={item.shop_items[0].image_url} alt={item.shop_items[0].name} className="w-full h-full object-cover" />
+                  <Image 
+                    src={item.shop_items[0].image_url} 
+                    alt={item.shop_items[0].name} 
+                    fill 
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover" 
+                  />
                 ) : (
                   <FiUser className="h-8 w-8 text-gray-500" />
                 )}
@@ -260,9 +267,15 @@ export default function InventoryPage() {
           <div className="flex flex-wrap gap-4">
             {badges.map(item => (
               <div key={item.id} className="flex flex-col items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg w-24">
-                <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center overflow-hidden relative">
                   {item.shop_items && item.shop_items.length > 0 && item.shop_items[0].image_url ? (
-                    <img src={item.shop_items[0].image_url} alt={item.shop_items[0].name} className="w-full h-full object-cover" />
+                    <Image 
+                      src={item.shop_items[0].image_url} 
+                      alt={item.shop_items[0].name} 
+                      fill 
+                      sizes="48px"
+                      className="object-cover" 
+                    />
                   ) : (
                     <FiAward className="h-6 w-6 text-yellow-600" />
                   )}

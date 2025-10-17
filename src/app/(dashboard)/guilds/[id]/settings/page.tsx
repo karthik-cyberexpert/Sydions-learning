@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
 import { FiAlertCircle, FiSave, FiCheckCircle, FiTrash2, FiPackage } from 'react-icons/fi'
+import Image from 'next/image'
 
 interface Guild {
   id: string
@@ -153,7 +154,25 @@ export default function GuildSettings() {
         <div className="space-y-4">
           {inventory.map(item => (
             <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="flex items-center"><div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3">{item.shop_items && item.shop_items.length > 0 && item.shop_items[0].image_url ? <img src={item.shop_items[0].image_url} alt={item.shop_items[0].name} className="w-full h-full object-cover" /> : <FiPackage />}</div><div><p className="font-medium">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].name : 'Unknown Item'}</p><p className="text-xs text-gray-500">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].item_type : 'Unknown Type'}</p></div></div>
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden mr-3 relative">
+                  {item.shop_items && item.shop_items.length > 0 && item.shop_items[0].image_url ? (
+                    <Image 
+                      src={item.shop_items[0].image_url} 
+                      alt={item.shop_items[0].name} 
+                      fill 
+                      sizes="40px"
+                      className="object-cover" 
+                    />
+                  ) : (
+                    <FiPackage className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].name : 'Unknown Item'}</p>
+                  <p className="text-xs text-gray-500">{item.shop_items && item.shop_items.length > 0 ? item.shop_items[0].item_type : 'Unknown Type'}</p>
+                </div>
+              </div>
               <button onClick={() => handleEquip(item)} disabled={saving} className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">Equip</button>
             </div>
           ))}

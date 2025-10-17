@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { FiPlus, FiEdit, FiTrash, FiAlertCircle, FiShoppingBag } from 'react-icons/fi'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 
 interface ShopItem {
   id: string
@@ -146,7 +147,19 @@ export default function AdminShop() {
           {items.length === 0 ? <li className="p-6 text-center text-gray-500 dark:text-gray-400">No shop items created yet.</li> : items.map((item) => (
             <motion.li key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 py-4 sm:px-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700">
               <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">{item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover rounded-full" /> : <FiShoppingBag className="h-5 w-5 text-gray-500" />}</div>
+                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center relative overflow-hidden">
+                  {item.image_url ? (
+                    <Image 
+                      src={item.image_url} 
+                      alt={item.name} 
+                      fill 
+                      sizes="40px"
+                      className="object-cover rounded-full" 
+                    />
+                  ) : (
+                    <FiShoppingBag className="h-5 w-5 text-gray-500" />
+                  )}
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{item.description.substring(0, 50)}...</p>
