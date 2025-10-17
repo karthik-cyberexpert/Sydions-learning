@@ -17,7 +17,7 @@ interface Submission {
   id: string
   live_url: string
   description: string
-  user: {
+  profiles: {
     username: string
   } | null
 }
@@ -53,7 +53,7 @@ export default function VotePage() {
       // 2. Fetch Submissions
       const { data: submissionsData, error: submissionsError } = await supabase
         .from('submissions')
-        .select(`id, live_url, description, user:user_id ( username )`)
+        .select(`id, live_url, description, profiles ( username )`)
         .eq('challenge_id', challengeId)
       
       if (submissionsError) throw submissionsError
@@ -153,7 +153,7 @@ export default function VotePage() {
           return (
             <div key={submission.id} className={`bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg flex flex-col border-2 ${hasVotedForThis ? 'border-indigo-500' : 'border-transparent'}`}>
               <div className="p-6 flex-grow">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Project by {submission.user?.username || 'Anonymous'}</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Project by {submission.profiles?.username || 'Anonymous'}</h3>
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 h-20 overflow-y-auto">{submission.description}</p>
                 <a href={submission.live_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                   View Project <FiExternalLink className="ml-2 h-4 w-4" />
