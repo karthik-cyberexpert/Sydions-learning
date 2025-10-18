@@ -40,7 +40,7 @@ export default function Dashboard() {
         // Fetch active challenges
         const { data: challengesData, error: challengesError } = await supabase
           .from('challenges')
-          .select('*')
+          .select('id, title, description, type, difficulty, deadline, max_points, created_at, status') // Explicit column selection
           .eq('status', 'Upcoming')
           .order('deadline', { ascending: true })
           .limit(5)
