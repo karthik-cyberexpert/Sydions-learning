@@ -90,6 +90,9 @@ function CreateChallengeContent() {
         throw new Error('Invalid deadline format.');
       }
       const isoDeadline = deadlineDate.toISOString();
+      
+      // Ensure max_team_size is always an integer, defaulting to 1 for solo/guild
+      const teamSize = formData.type === 'tag-team' ? formData.max_team_size : 1;
 
       const { error } = await supabase
         .from('challenges')
@@ -101,7 +104,7 @@ function CreateChallengeContent() {
             difficulty: formData.difficulty,
             deadline: isoDeadline, // Use the converted ISO string
             max_points: formData.max_points,
-            max_team_size: formData.type === 'tag-team' ? formData.max_team_size : null,
+            max_team_size: teamSize, // Always send an integer
             status: 'Upcoming',
             guild_id: formData.guild_id,
           }
