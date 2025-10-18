@@ -79,6 +79,11 @@ function CreateChallengeContent() {
     setError(null)
     
     try {
+      if (!formData.title.trim()) throw new Error('Title is required.');
+      if (!formData.description.trim()) throw new Error('Description is required.');
+      if (!formData.deadline) throw new Error('Deadline is required.');
+      if (formData.max_points <= 0) throw new Error('Max points must be greater than zero.');
+
       const { error } = await supabase
         .from('challenges')
         .insert([
@@ -277,7 +282,7 @@ function CreateChallengeContent() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+              className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
             >
               Cancel
             </button>
