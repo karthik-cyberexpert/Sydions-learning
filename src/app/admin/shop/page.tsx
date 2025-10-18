@@ -19,6 +19,7 @@ interface ShopItem {
 }
 
 const ITEM_TYPES: ('avatar' | 'banner' | 'badge')[] = ['avatar', 'banner', 'badge']
+const STORAGE_BUCKET = 'store-assets' // IMPORTANT: Ensure this bucket exists in Supabase Storage
 
 export default function AdminShop() {
   const [items, setItems] = useState<ShopItem[]>([])
@@ -96,21 +97,23 @@ export default function AdminShop() {
   const uploadFile = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExt}`
+    // Path structure: shop_items/uuid.ext
     const filePath = `shop_items/${fileName}`
 
     const { error: uploadError } = await supabase.storage
-      .from('store-assets') // Assuming a bucket named 'store-assets'
+      .from(STORAGE_BUCKET)
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
       })
 
     if (uploadError) {
-      throw new Error(`File upload failed: ${uploadError.message}`)
+      // Throw a more specific error message
+      throw new Error(`File upload failed. Please check if the '${STORAGE_BUCKET}' bucket exists and has correct RLS policies enabled for INSERT/UPDATE. Supabase error: ${uploadError.message}`)
     }
 
     const { data: publicUrlData } = supabase.storage
-      .from('store-assets')
+      .from(STORAGE_BUCKET)
       .getPublicUrl(filePath)
 
     if (!publicUrlData || !publicUrlData.publicUrl) {
