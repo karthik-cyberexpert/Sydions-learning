@@ -57,9 +57,10 @@ export default function EditChallenge() {
           throw new Error('You do not have permission to edit challenges.')
         }
 
+        // Explicitly select all required columns
         const { data, error: challengeError } = await supabase
           .from('challenges')
-          .select('*')
+          .select('id, title, description, type, difficulty, deadline, max_points, max_team_size, status, guild_id')
           .eq('id', id)
           .single()
         

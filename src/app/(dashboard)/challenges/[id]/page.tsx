@@ -18,6 +18,7 @@ interface Challenge {
   max_team_size: number
   created_at: string
   status: 'Upcoming' | 'Voting' | 'Completed'
+  guild_id: string | null // Added guild_id
 }
 
 interface Submission {
@@ -69,10 +70,10 @@ export default function ChallengeDetail() {
       if (!id) return
       
       try {
-        // Fetch challenge details
+        // Fetch challenge details - Explicit column selection
         const { data: challengeData, error: challengeError } = await supabase
           .from('challenges')
-          .select('*')
+          .select('id, title, description, type, difficulty, deadline, max_points, max_team_size, created_at, status, guild_id')
           .eq('id', id)
           .single()
         
