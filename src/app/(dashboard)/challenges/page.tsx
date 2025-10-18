@@ -45,7 +45,7 @@ export default function Challenges() {
         // Fetch challenges
         let query = supabase
           .from('challenges')
-          .select('*')
+          .select('id, title, description, type, difficulty, deadline, max_points, max_team_size, created_at, status') // Explicit column selection
         
         if (filter !== 'all') {
           query = query.eq('type', filter)
@@ -60,7 +60,7 @@ export default function Challenges() {
         const { data, error } = await query
         
         if (error) throw error
-        setChallenges(data || [])
+        setChallenges(data as Challenge[] || [])
       } catch (error) {
         console.error('Error fetching challenges:', error)
       } finally {
