@@ -84,6 +84,13 @@ function CreateChallengeContent() {
       if (!formData.deadline) throw new Error('Deadline is required.');
       if (formData.max_points <= 0) throw new Error('Max points must be greater than zero.');
 
+      // Convert the local datetime string to a full ISO string for PostgreSQL
+      const deadlineDate = new Date(formData.deadline);
+      if (isNaN(deadlineDate.getTime())) {
+        throw new Error('Invalid deadline format.');
+      }
+      const isoDeadline = deadlineDate.toISOString();
+
       const { error } = await supabase
         .from('challenges')
         .insert([
@@ -92,7 +99,7 @@ function CreateChallengeContent() {
             description: formData.description,
             type: formData.type,
             difficulty: formData.difficulty,
-            deadline: formData.deadline,
+            deadline: isoDeadline, // Use the converted ISO string
             max_points: formData.max_points,
             max_team_size: formData.type === 'tag-team' ? formData.max_team_size : null,
             status: 'Upcoming',
